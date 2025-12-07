@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POM Assistant 2.0 | SAP Ariba</title>
+    <link rel="icon" type="image/png" href="sap-icon.png">
+    
+    <!-- SheetJS for Excel parsing (client-side) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        /* ========================================
+           SAP FIORI HORIZON DESIGN TOKENS
+           ======================================== */
+        :root {
+            --sapBrandColor: #0070F2;
+            --sapPrimaryColor: #0070F2;
+            --sapBackgroundColor: #F5F6F7;
+            --sapShellColor: #354A5F;
+            --sapSurfaceColor: #FFFFFF;
+            --sapTextColor: #32363A;
+            --sapContent_LabelColor: #6A6D70;
+            --sapTitleColor: #32363A;
+            --sapShell_TextColor: #FFFFFF;
+            --sapNegativeColor: #BB0000;
+            --sapCriticalColor: #E9730C;
+            --sapPositiveColor: #107E3E;
+            --sapInformationColor: #0070F2;
+            --sapButton_Background: #0070F2;
+            --sapButton_Hover_Background: #0064D9;
+            --sapButton_TextColor: #FFFFFF;
+            --sapTile_BorderRadius: 12px;
+            --sapTile_BoxShadow: 0 0 2px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.1);
+            --sapShell_Height: 48px;
+            --sapContent_MaxWidth: 1200px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "72", "72full", "72-Web", Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--sapBackgroundColor);
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           SHELL BAR
+           ======================================== */
+        .fiori-shell {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--sapShell_Height);
+            background-color: var(--sapShellColor);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+            z-index: 9999;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .shell-logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .sap-logo {
+            height: 40px;
+            width: auto;
+        }
+
+        .shell-title {
+            color: var(--sapShell_TextColor);
+            font-size: 1rem;
+            font-weight: 400;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .shell-badge {
+            background: var(--sapPositiveColor);
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-weight: 600;
+        }
+
+        .shell-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .shell-avatar {
+            width: 32px;
+            height: 32px;
+            background-color: #5A7A94;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--sapShell_TextColor);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* ========================================
+           MAIN CONTENT
+           ======================================== */
+        .fiori-content {
+            margin-top: calc(var(--sapShell_Height) + 1rem);
+            max-width: var(--sapContent_MaxWidth);
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0 1.5rem 4rem 1.5rem;
+        }
+
+        .fiori-page-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .fiori-page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--sapTitleColor);
+            margin: 0 0 0.25rem 0;
+        }
+
+        .fiori-page-subtitle {
+            font-size: 0.9375rem;
+            color: var(--sapContent_LabelColor);
+            margin: 0;
+        }
+
+        /* ========================================
+           PRIVACY BADGE
+           ======================================== */
+        .privacy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 126, 62, 0.1);
+            color: var(--sapPositiveColor);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .privacy-badge svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ========================================
+           UPLOAD CARD
+           ======================================== */
+        .upload-card {
+            background: var(--sapSurfaceColor);
+            border-radius: var(--sapTile_BorderRadius);
+            box-shadow: var(--sapTile_BoxShadow);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-zone {
+            border: 2px dashed #89919A;
+            border-radius: 8px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--sapBrandColor);
+            background: rgba(0, 112, 242, 0.02);
+        }
+
+        .upload-zone input {
+            display: none;
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            color: var(--sapContent_LabelColor);
+        }
+
+        .upload-text {
+            font-size: 1rem;
+            color: var(--sapTextColor);
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-hint {
+            font-size: 0.875rem;
+            color: var(--sapContent_LabelColor);
+        }
+
+        /* ========================================
+           CARDS & TILES
+           ======================================== */
+        .fiori-card {
+            background: var(--sapSurfaceColor);
+            border-radius: var(--sapTile_BorderRadius);
+            box-shadow: var(--sapTile_BoxShadow);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-header {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--sapTitleColor);
+            margin: 1.5rem 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #E5E5E5;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .fiori-info-tile {
+            background: var(--sapSurfaceColor);
+            border-radius: var(--sapTile_BorderRadius);
+            box-shadow: var(--sapTile_BoxShadow);
+            padding: 1rem 1.25rem;
+        }
+
+        .fiori-info-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--sapContent_LabelColor);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .fiori-info-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--sapTextColor);
+            word-break: break-word;
+        }
+
+        /* ========================================
+           NUMERIC TILES
+           ======================================== */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .fiori-numeric-tile {
+            background: var(--sapSurfaceColor);
+            border-radius: var(--sapTile_BorderRadius);
+            box-shadow: var(--sapTile_BoxShadow);
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .fiori-numeric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--sapBrandColor);
+            line-height: 1.1;
+        }
+
+        .fiori-numeric-label {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--sapContent_LabelColor);
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        /* ========================================
+           STATUS BADGES
+           ======================================== */
+        .fiori-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .fiori-status-info {
+            background-color: rgba(0, 112, 242, 0.12);
+            color: var(--sapInformationColor);
+        }
+
+        .fiori-status-success {
+            background-color: rgba(16, 126, 62, 0.12);
+            color: var(--sapPositiveColor);
+        }
+
+        .fiori-status-warning {
+            background-color: rgba(233, 115, 12, 0.12);
+            color: var(--sapCriticalColor);
+        }
+
+        /* ========================================
+           CONTACT CHIPS
+           ======================================== */
+        .fiori-contact-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .fiori-contact-chip {
+            display: inline-flex;
+            align-items: center;
+            background: #F0F1F2;
+            border-radius: 16px;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.8125rem;
+            color: var(--sapTextColor);
+        }
+
+        /* ========================================
+           CODE BLOCK
+           ======================================== */
+        .code-card {
+            background: var(--sapSurfaceColor);
+            border-radius: var(--sapTile_BorderRadius);
+            box-shadow: var(--sapTile_BoxShadow);
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: #F5F6F7;
+            border-bottom: 1px solid #E5E5E5;
+        }
+
+        .code-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--sapTitleColor);
+        }
+
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.5rem 1rem;
+            background: var(--sapButton_Background);
+            color: var(--sapButton_TextColor);
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            background: var(--sapButton_Hover_Background);
+        }
+
+        .copy-btn.copied {
+            background: var(--sapPositiveColor);
+        }
+
+        .copy-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .code-body {
+            padding: 1rem;
+            background: #FAFBFC;
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+            font-size: 0.8125rem;
+            color: var(--sapTextColor);
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* ========================================
+           DATA TABLE
+           ======================================== */
+        .data-table-wrapper {
+            background: var(--sapSurfaceColor);
+            border-radius: var(--sapTile_BorderRadius);
+            box-shadow: var(--sapTile_BoxShadow);
+            overflow: hidden;
+        }
+
+        .data-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: #F5F6F7;
+            border-bottom: 1px solid #E5E5E5;
+            cursor: pointer;
+        }
+
+        .data-table-header:hover {
+            background: #EDEFF0;
+        }
+
+        .data-table-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--sapTitleColor);
+        }
+
+        .data-table-content {
+            display: none;
+            overflow-x: auto;
+        }
+
+        .data-table-content.expanded {
+            display: block;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8125rem;
+        }
+
+        .data-table th {
+            background: #F5F6F7;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--sapTitleColor);
+            border-bottom: 1px solid #E5E5E5;
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #E5E5E5;
+            color: var(--sapTextColor);
+        }
+
+        .data-table tr:hover {
+            background: #F5F6F7;
+        }
+
+        /* ========================================
+           EMPTY STATE
+           ======================================== */
+        .empty-state {
+            background: var(--sapSurfaceColor);
+            border-radius: var(--sapTile_BorderRadius);
+            box-shadow: var(--sapTile_BoxShadow);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #E8F4FD 0%, #D6E9FA 100%);
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty-icon svg {
+            width: 28px;
+            height: 28px;
+            color: var(--sapBrandColor);
+        }
+
+        .empty-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--sapTitleColor);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-text {
+            font-size: 0.875rem;
+            color: var(--sapContent_LabelColor);
+        }
+
+        /* ========================================
+           FOOTER
+           ======================================== */
+        .fiori-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 0.75rem 1rem;
+            background: var(--sapBackgroundColor);
+            color: var(--sapContent_LabelColor);
+            font-size: 0.8125rem;
+            border-top: 1px solid #E5E5E5;
+            z-index: 100;
+        }
+
+        /* ========================================
+           HIDDEN
+           ======================================== */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Shell Bar -->
+    <header class="fiori-shell">
+        <div class="shell-logo">
+            <img src="saplogo.png" alt="SAP" class="sap-logo">
+        </div>
+        <span class="shell-title">POM Assistant <span class="shell-badge">2.0 Client-Side</span></span>
+        <div class="shell-user">
+            <div class="shell-avatar">PS</div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="fiori-content">
+        <!-- Page Header -->
+        <div class="fiori-page-header">
+            <h1 class="fiori-page-title">AQL Query Generator</h1>
+            <p class="fiori-page-subtitle">Generate AQL queries from SAP Ariba monitoring reports</p>
+        </div>
+
+        <!-- Privacy Badge -->
+        <div class="privacy-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M9 12l2 2 4-4"/>
+            </svg>
+            100% Private - Data never leaves your browser
+        </div>
+
+        <!-- Upload Card -->
+        <div class="upload-card">
+            <div class="upload-zone" id="uploadZone">
+                <input type="file" id="fileInput" accept=".xlsx,.xls">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/>
+                    <polyline points="9 15 12 12 15 15"/>
+                </svg>
+                <p class="upload-text">Click to upload or drag and drop</p>
+                <p class="upload-hint">Supports PO_Ordering and RC_Processing Excel files</p>
+            </div>
+        </div>
+
+        <!-- Results Container (hidden by default) -->
+        <div id="resultsContainer" class="hidden">
+            <!-- Status Badge -->
+            <div id="statusBadge"></div>
+
+            <!-- Report Information -->
+            <h2 class="section-header">Report Information</h2>
+            <div class="info-grid" id="infoGrid"></div>
+
+            <!-- Customer Contacts -->
+            <div id="contactsSection" class="hidden">
+                <h2 class="section-header">Customer Contacts</h2>
+                <div class="fiori-card">
+                    <div class="fiori-contact-list" id="contactsList"></div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <h2 class="section-header">Summary</h2>
+            <div class="metrics-grid" id="metricsGrid"></div>
+
+            <!-- Query Section -->
+            <div id="querySection" class="hidden">
+                <h2 class="section-header">Generated AQL Query</h2>
+                <div class="code-card">
+                    <div class="code-header">
+                        <span class="code-title">AQL Query</span>
+                        <button class="copy-btn" id="copyBtn" onclick="copyQuery()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <pre class="code-body" id="queryCode"></pre>
+                </div>
+            </div>
+
+            <!-- Raw Data -->
+            <h2 class="section-header">Raw Data</h2>
+            <div class="data-table-wrapper">
+                <div class="data-table-header" onclick="toggleDataTable()">
+                    <span class="data-table-title">View uploaded data</span>
+                    <svg id="expandIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </div>
+                <div class="data-table-content" id="dataTableContent">
+                    <table class="data-table" id="dataTable"></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State (shown by default) -->
+        <div id="emptyState" class="empty-state">
+            <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/>
+                    <polyline points="9 15 12 12 15 15"/>
+                </svg>
+            </div>
+            <h2 class="empty-title">Upload Monitoring File</h2>
+            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering and RC_Processing reports.</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="fiori-footer">
+        Created by Michal Gulas
+    </footer>
+
+    <script>
+        // Global variables
+        let currentQuery = '';
+        let currentData = null;
+
+        // File upload handling
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) processFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) processFile(file);
+        });
+
+        // Process Excel file
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Detect monitoring type
+                    const sheetNames = workbook.SheetNames;
+                    let monitoringType = null;
+                    let infoData = null;
+                    let mainData = null;
+
+                    if (sheetNames.includes('Info')) {
+                        infoData = XLSX.utils.sheet_to_json(workbook.Sheets['Info'], { header: 1 });
+                    }
+
+                    if (sheetNames.includes('PO_Ordering')) {
+                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['PO_Ordering']);
+                        monitoringType = 'PO_Ordering';
+                    } else if (sheetNames.includes('RC_Processing')) {
+                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['RC_Processing']);
+                        monitoringType = 'RC_Processing';
+                    } else {
+                        // Find first non-Info sheet
+                        for (const sheet of sheetNames) {
+                            if (sheet !== 'Info') {
+                                mainData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet]);
+                                monitoringType = sheet;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!monitoringType || !mainData) {
+                        alert('Could not detect monitoring type. Please ensure the file contains valid data.');
+                        return;
+                    }
+
+                    currentData = mainData;
+                    displayResults(monitoringType, infoData, mainData);
+
+                } catch (error) {
+                    alert('Error processing file: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Extract info from Info sheet
+        function extractInfo(infoData) {
+            const info = {};
+            if (!infoData) return info;
+
+            for (const row of infoData) {
+                if (row.length >= 2) {
+                    const key = String(row[0] || '').trim();
+                    const value = String(row[1] || '').trim();
+                    
+                    if (key === 'Realm') info.realm = value;
+                    else if (key === 'PSEE Consultant') info.productSpecialist = value;
+                    else if (key === 'Monitoring Contacts') info.customerContacts = value;
+                    else if (key === 'Data Center') info.dataCenter = value;
+                    else if (key === 'Customer Account Name') info.customerName = value;
+                }
+            }
+            return info;
+        }
+
+        // Display results
+        function displayResults(monitoringType, infoData, mainData) {
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.remove('hidden');
+
+            const info = extractInfo(infoData);
+
+            // Status badge
+            const statusBadge = document.getElementById('statusBadge');
+            if (monitoringType === 'PO_Ordering') {
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-info">PO Ordering</span>';
+            } else if (monitoringType === 'RC_Processing') {
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-success">RC Processing</span>';
+            } else {
+                statusBadge.innerHTML = `<span class="fiori-status fiori-status-warning">${monitoringType.replace('_', ' ')}</span>`;
+            }
+
+            // Info grid
+            const infoGrid = document.getElementById('infoGrid');
+            infoGrid.innerHTML = `
+                <div class="fiori-info-tile">
+                    <div class="fiori-info-label">Realm</div>
+                    <div class="fiori-info-value">${info.realm || 'N/A'}</div>
+                </div>
+                <div class="fiori-info-tile">
+                    <div class="fiori-info-label">Product Specialist</div>
+                    <div class="fiori-info-value">${info.productSpecialist || 'N/A'}</div>
+                </div>
+                <div class="fiori-info-tile">
+                    <div class="fiori-info-label">Data Center</div>
+                    <div class="fiori-info-value">${info.dataCenter || 'N/A'}</div>
+                </div>
+            `;
+
+            // Customer contacts
+            const contactsSection = document.getElementById('contactsSection');
+            const contactsList = document.getElementById('contactsList');
+            if (info.customerContacts) {
+                contactsSection.classList.remove('hidden');
+                const contacts = info.customerContacts.split(',').map(c => c.trim());
+                contactsList.innerHTML = contacts.map(c => `<span class="fiori-contact-chip">${c}</span>`).join('');
+            } else {
+                contactsSection.classList.add('hidden');
+            }
+
+            // Get unique names
+            const uniqueNames = [...new Set(mainData.map(row => row.UniqueName).filter(Boolean))];
+            const recordCount = uniqueNames.length || mainData.length;
+
+            // Metrics
+            const metricsGrid = document.getElementById('metricsGrid');
+            const typeLabel = monitoringType === 'PO_Ordering' ? 'PO' : 
+                             monitoringType === 'RC_Processing' ? 'RC' : 
+                             monitoringType.substring(0, 3).toUpperCase();
+            metricsGrid.innerHTML = `
+                <div class="fiori-numeric-tile">
+                    <div class="fiori-numeric-value">${recordCount}</div>
+                    <div class="fiori-numeric-label">Total Records</div>
+                </div>
+                <div class="fiori-numeric-tile">
+                    <div class="fiori-numeric-value">${typeLabel}</div>
+                    <div class="fiori-numeric-label">Record Type</div>
+                </div>
+            `;
+
+            // Query section
+            const querySection = document.getElementById('querySection');
+            const queryCode = document.getElementById('queryCode');
+            
+            if (monitoringType === 'PO_Ordering' || monitoringType === 'RC_Processing') {
+                querySection.classList.remove('hidden');
+                currentQuery = generateQuery(monitoringType, uniqueNames);
+                queryCode.textContent = currentQuery;
+            } else {
+                querySection.classList.add('hidden');
+            }
+
+            // Data table
+            renderDataTable(mainData);
+        }
+
+        // Generate AQL query
+        function generateQuery(type, uniqueNames) {
+            const namesStr = uniqueNames.map(n => `'${n}'`).join(', ');
+            
+            if (type === 'PO_Ordering') {
+                return `SELECT
+UniqueName "PO ID Ariba",
+OrderID "Order ID SAP",
+Name "PO Title",
+StatusString "Status",
+"Active" "Active",
+TimeCreated,
+TimeUpdated,
+Recipients.OrderingMethod "Ordering Method",
+Recipients.State "Recipient State",
+Recipients.FailureReason "Failure Reason",
+Recipients.TimeCreated "Recipient TimeCreated",
+Recipients.TimeUpdated "Recipient TimeUpdated",
+Supplier.Name as "Supplier Name",
+Supplier.UniqueName as "Supplier ID",
+SupplierLocation.PreferredOrderingMethod as SupplierOrderingMethod,
+SupplierLocation.EmailAddress as EmailAddress,
+SupplierLocation.AribaNetworkId as AribaNetworkId,
+this
+FROM ariba.purchasing.core.PurchaseOrder
+WHERE UniqueName IN (${namesStr})
+ORDER BY StatusString, UniqueName, TimeCreated, Recipients.OrderingMethod`;
+            } else {
+                return `SELECT DISTINCT UniqueName as "Id",
+UniqueName,
+StatusString,
+CreateDate,
+ApprovedDate,
+'Awaiting processing' ProcessedStateString
+FROM ariba.receiving.core.Receipt
+WHERE StatusString = 'Approved'
+AND ProcessedState = 1
+AND UniqueName IN (${namesStr})
+ORDER BY ApprovedDate DESC`;
+            }
+        }
+
+        // Copy query to clipboard
+        function copyQuery() {
+            navigator.clipboard.writeText(currentQuery).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.classList.add('copied');
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Copied!
+                `;
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Copy
+                    `;
+                }, 2000);
+            });
+        }
+
+        // Render data table
+        function renderDataTable(data) {
+            const table = document.getElementById('dataTable');
+            if (!data || data.length === 0) {
+                table.innerHTML = '<tr><td>No data available</td></tr>';
+                return;
+            }
+
+            const headers = Object.keys(data[0]);
+            let html = '<thead><tr>';
+            headers.forEach(h => html += `<th>${h}</th>`);
+            html += '</tr></thead><tbody>';
+            
+            data.forEach(row => {
+                html += '<tr>';
+                headers.forEach(h => html += `<td>${row[h] || ''}</td>`);
+                html += '</tr>';
+            });
+            html += '</tbody>';
+            
+            table.innerHTML = html;
+        }
+
+        // Toggle data table
+        function toggleDataTable() {
+            const content = document.getElementById('dataTableContent');
+            const icon = document.getElementById('expandIcon');
+            content.classList.toggle('expanded');
+            icon.style.transform = content.classList.contains('expanded') ? 'rotate(180deg)' : 'rotate(0)';
+        }
+    </script>
+</body>
+</html>
+
