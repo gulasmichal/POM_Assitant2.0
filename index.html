@@ -462,6 +462,38 @@
             height: 14px;
         }
 
+        .outlook-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #0078D4 0%, #106EBE 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 120, 212, 0.3);
+            margin-top: 1rem;
+        }
+
+        .outlook-btn:hover {
+            background: linear-gradient(135deg, #106EBE 0%, #005A9E 100%);
+            box-shadow: 0 4px 8px rgba(0, 120, 212, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .outlook-btn:active {
+            transform: translateY(0);
+        }
+
+        .outlook-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
         .code-body {
             padding: 1rem;
             background: #FAFBFC;
@@ -729,6 +761,15 @@
                     </div>
                     <pre class="code-body" id="emailBody"></pre>
                 </div>
+                
+                <!-- Open in Outlook Button -->
+                <button class="outlook-btn" id="openOutlookBtn" onclick="openInOutlook()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                    Open in Outlook
+                </button>
             </div>
 
             <!-- Raw Data -->
@@ -776,6 +817,7 @@
         let currentEmailBody = '';
         let currentMonitoringType = '';
         let currentCustomerName = '';
+        let hasCustomerContacts = false;
 
         // File upload handling
         const uploadZone = document.getElementById('uploadZone');
@@ -941,6 +983,7 @@
             // Customer contacts
             const contactsSection = document.getElementById('contactsSection');
             const contactsList = document.getElementById('contactsList');
+            hasCustomerContacts = !!info.customerContacts;
             if (info.customerContacts) {
                 contactsSection.classList.remove('hidden');
                 const contacts = info.customerContacts.split(',').map(c => c.trim());
@@ -1253,6 +1296,35 @@ ORDER BY ApprovedDate DESC`;
             navigator.clipboard.writeText(currentContacts).then(() => {
                 showCopySuccess('copyContactsBtn');
             });
+        }
+
+        // Open email in Outlook (mailto)
+        function openInOutlook() {
+            const notificationEmail = 'itsm.notification-service@sap.com';
+            let toRecipients = '';
+            let ccRecipients = '';
+
+            if (hasCustomerContacts && currentContacts) {
+                // Customer contacts as recipients, PS and notification service in CC
+                toRecipients = currentContacts;
+                ccRecipients = currentProductSpecialist 
+                    ? `${currentProductSpecialist}, ${notificationEmail}`
+                    : notificationEmail;
+            } else {
+                // Product specialist as recipient, notification service in CC
+                toRecipients = currentProductSpecialist || '';
+                ccRecipients = notificationEmail;
+            }
+
+            // Construct mailto URL
+            const subject = encodeURIComponent(currentEmailSubject);
+            const body = encodeURIComponent(currentEmailBody);
+            const cc = encodeURIComponent(ccRecipients);
+            
+            let mailtoUrl = `mailto:${toRecipients}?subject=${subject}&body=${body}&cc=${cc}`;
+            
+            // Open the mailto link
+            window.location.href = mailtoUrl;
         }
 
         // Show copy success animation for small buttons
