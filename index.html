@@ -1020,7 +1020,7 @@
                 case 'RC_Processing':
                     return generateRCEmail(customerName, greeting, hasCustomerContacts);
                 case 'CLID_Request_Error':
-                    return generateCLIDEmail(customerName, firstName);
+                    return generateCLIDEmail(customerName, firstName, hasCustomerContacts);
                 case 'PAY_Sending':
                     return generatePAYEmail(customerName, firstName);
                 default:
@@ -1071,10 +1071,38 @@ ${closing}`
             };
         }
 
-        function generateCLIDEmail(customerName, firstName) {
-            return {
-                subject: `Proactive Monitoring - ${customerName} - CLID Request Error`,
-                body: `Hello ${firstName},
+        function generateCLIDEmail(customerName, firstName, hasCustomerContacts) {
+            if (hasCustomerContacts) {
+                // Email template for when customer contacts are available
+                return {
+                    subject: `Proactive Monitoring - ${customerName} - CLID Request Error`,
+                    body: `Hello Team,
+
+Our proactive monitoring queries identified several Contract Workspaces with a CLID request error.
+
+The list of the affected CWs is in the attached Excel file.
+
+How to review the affected CW: Search > Contract Workspace (Procurement) > search by CW ID
+
+Usual CLID request error types:
+
+ReceivedContractStatusUpdateRequestFailure
+ReceivedContractStatusUpdateRequestFailure error indicates that the CSUR was successfully processed without any issue, but 500 (failure) response is returned by ERP meaning the corresponding Contract document was NOT created on ERP side. Reviewing the details (in History), we can see the error is caused by Master data, which means that fix requires client engagement.
+
+SendContractRequestFailureWithContractID
+Link: https://support.ariba.com/item/view/KB0409688
+
+ProcessContractStatusUpdateRequestInternalError
+Link: https://support.ariba.com/item/view/KB0402285
+Missing Document Type attribute when sending a CLID to an external system
+
+This issue is caused by ERP Errors received from your ERP system. You should be able to resolve the issue by adjusting the content of the affected CW with the corresponding object in your ERP.`
+                };
+            } else {
+                // Email template for when no customer contacts (send to Product Specialist)
+                return {
+                    subject: `Proactive Monitoring - ${customerName} - CLID Request Error`,
+                    body: `Hello ${firstName},
 
 Our proactive monitoring queries identified a single Contract Workspaces with a CLID request error.
 The affected CW is in the attached Excel file.
@@ -1096,7 +1124,8 @@ Missing Document Type attribute when sending a CLID to an external system
 This issue is caused by ERP Errors received from the customer's ERP system. To resolve the issue, we need to notify the customer to check and make necessary corrections. Please notify the customer about the issue. In general, the customer should be able to resolve the issue by adjusting the content of the affected CW with the corresponding object in their ERP.
 
 If you want me to email similar notifications directly to the customer (with you in CC), please update the customer contact for proactive monitoring in PSEE Operational Dashboard.`
-            };
+                };
+            }
         }
 
         function generatePAYEmail(customerName, firstName) {
