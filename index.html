@@ -462,6 +462,86 @@
             height: 14px;
         }
 
+        .outlook-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #0078D4 0%, #106EBE 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 120, 212, 0.3);
+            margin-top: 1rem;
+        }
+
+        .outlook-btn:hover {
+            background: linear-gradient(135deg, #106EBE 0%, #005A9E 100%);
+            box-shadow: 0 4px 8px rgba(0, 120, 212, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .outlook-btn:active {
+            transform: translateY(0);
+        }
+
+        .outlook-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* ========================================
+           INPUT FIELDS
+           ======================================== */
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-label {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--sapTitleColor);
+        }
+
+        .input-field {
+            padding: 0.625rem 0.875rem;
+            border: 1px solid #89919A;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: var(--sapTextColor);
+            background: var(--sapSurfaceColor);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--sapBrandColor);
+            box-shadow: 0 0 0 3px rgba(0, 112, 242, 0.15);
+        }
+
+        .input-field::placeholder {
+            color: var(--sapContent_LabelColor);
+        }
+
         .code-body {
             padding: 1rem;
             background: #FAFBFC;
@@ -636,6 +716,18 @@
 
         <!-- Upload Card -->
         <div class="upload-card">
+            <!-- Case Number and ITSM REF Inputs -->
+            <div class="input-row">
+                <div class="input-group">
+                    <label class="input-label" for="caseNumberInput">Case Number</label>
+                    <input type="text" id="caseNumberInput" class="input-field" placeholder="e.g., CS20250011256983" oninput="updateEmailPreview()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label" for="itsmRefInput">ITSM Reference</label>
+                    <input type="text" id="itsmRefInput" class="input-field" placeholder="e.g., Ref:MSG947716891_yyaB2oN7NHK0O7KVgl" oninput="updateEmailPreview()">
+                </div>
+            </div>
+            
             <div class="upload-zone" id="uploadZone">
                 <input type="file" id="fileInput" accept=".xlsx,.xls">
                 <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -729,6 +821,15 @@
                     </div>
                     <pre class="code-body" id="emailBody"></pre>
                 </div>
+                
+                <!-- Open in Outlook Button -->
+                <button class="outlook-btn" id="openOutlookBtn" onclick="openInOutlook()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                    Open in Outlook
+                </button>
             </div>
 
             <!-- Raw Data -->
@@ -776,6 +877,10 @@
         let currentEmailBody = '';
         let currentMonitoringType = '';
         let currentCustomerName = '';
+        let hasCustomerContacts = false;
+        let currentCaseNumber = '';
+        let currentItsmRef = '';
+        let currentRealm = '';
 
         // File upload handling
         const uploadZone = document.getElementById('uploadZone');
@@ -901,12 +1006,17 @@
                 statusBadge.innerHTML = `<span class="fiori-status fiori-status-warning">${monitoringType.replace('_', ' ')}</span>`;
             }
 
-            // Store monitoring type and customer name for email
+            // Store monitoring type, customer name, and realm for email
             currentMonitoringType = monitoringType;
             currentCustomerName = info.customerName || 'Customer Account Name';
+            currentRealm = info.realm || '';
 
             // Store product specialist for copy
             currentProductSpecialist = info.productSpecialist || '';
+            
+            // Get case number and ITSM ref from inputs
+            currentCaseNumber = document.getElementById('caseNumberInput').value.trim();
+            currentItsmRef = document.getElementById('itsmRefInput').value.trim();
 
             // Info grid
             const infoGrid = document.getElementById('infoGrid');
@@ -941,6 +1051,7 @@
             // Customer contacts
             const contactsSection = document.getElementById('contactsSection');
             const contactsList = document.getElementById('contactsList');
+            hasCustomerContacts = !!info.customerContacts;
             if (info.customerContacts) {
                 contactsSection.classList.remove('hidden');
                 const contacts = info.customerContacts.split(',').map(c => c.trim());
@@ -988,7 +1099,6 @@
             // Email template section
             const emailSubject = document.getElementById('emailSubject');
             const emailBody = document.getElementById('emailBody');
-            const hasCustomerContacts = !!info.customerContacts;
             const emailTemplate = generateEmailTemplate(monitoringType, currentCustomerName, info.productSpecialist, hasCustomerContacts);
             currentEmailSubject = emailTemplate.subject;
             currentEmailBody = emailTemplate.body;
@@ -1025,10 +1135,22 @@
                     return generatePAYEmail(customerName, firstName);
                 default:
                     return {
-                        subject: `Proactive Monitoring - ${customerName} - ${type.replace(/_/g, ' ')}`,
-                        body: `${greeting}\n\nPlease review the attached monitoring data.`
+                        subject: formatSubject(`Proactive Monitoring - ${type.replace(/_/g, ' ')}`, customerName),
+                        body: formatBody(`${greeting}\n\nPlease review the attached monitoring data.`)
                     };
             }
+        }
+
+        // Format subject with case number and realm
+        function formatSubject(basePart, customerName) {
+            const realmPart = currentRealm ? `, realm ${currentRealm}` : '';
+            const subjectBase = `PSEE Proactive Monitoring - customer ${customerName}${realmPart} - ${basePart}`;
+            return currentCaseNumber ? `${currentCaseNumber} ${subjectBase}` : subjectBase;
+        }
+
+        // Format body with ITSM reference
+        function formatBody(baseBody) {
+            return currentItsmRef ? `${baseBody}\n\n${currentItsmRef}` : baseBody;
         }
 
         function generatePOEmail(customerName, greeting, hasCustomerContacts) {
@@ -1036,16 +1158,18 @@
                 ? 'If you need further assistance, you are welcome to submit a new support case with SAP Ariba.'
                 : 'Please forward this information to the customer. If they need further assistance, they are welcome to submit a new support case with SAP Ariba.';
             
-            return {
-                subject: `Proactive Monitoring - ${customerName} - POs in status = Ordering`,
-                body: `${greeting}
+            const bodyContent = `${greeting}
 
 Our Proactive Monitoring queries identified several Ariba purchase orders with status = Ordering.
 The cause of this status is:
 • lack of response from the ERP side. Please check the status of these POs in your ERP.
 • missing trading relationship with supplier in SAP Business Network
 
-${closing}`
+${closing}`;
+            
+            return {
+                subject: formatSubject('POs in status = Ordering', customerName),
+                body: formatBody(bodyContent)
             };
         }
 
@@ -1054,9 +1178,7 @@ ${closing}`
                 ? 'If you need further assistance, you are welcome to submit a new support case with SAP Ariba.'
                 : 'Please forward this information to the customer. If they need further assistance, they are welcome to submit a new support case with SAP Ariba.';
             
-            return {
-                subject: `Proactive Monitoring - ${customerName} - RCs in Processing Status = Processing`,
-                body: `${greeting}
+            const bodyContent = `${greeting}
 
 Our Proactive Monitoring queries identified several Ariba receipts with Processing State = Processing.
 These receipts were approved in Ariba and send to the ERP system.
@@ -1067,19 +1189,20 @@ The list of affected RCs is in the attached Excel file.
 Ariba retries 4 times a day to re-send the receipts to ERP until they are successfully processed or the max number of retries is used.
 The maximum number of retries is determined by parameter Application.Receiving.MaxRetriesToSendPushFailedReceipts set in your realm.
 
-${closing}`
+${closing}`;
+            
+            return {
+                subject: formatSubject('RCs in Processing Status = Processing', customerName),
+                body: formatBody(bodyContent)
             };
         }
 
         function generateCLIDEmail(customerName, firstName, hasCustomerContacts) {
             if (hasCustomerContacts) {
                 // Email template for when customer contacts are available
-                return {
-                    subject: `Proactive Monitoring - ${customerName} - CLID Request Error`,
-                    body: `Hello Team,
+                const bodyContent = `Hello Team,
 
 Our proactive monitoring queries identified several Contract Workspaces with a CLID request error.
-
 The list of the affected CWs is in the attached Excel file.
 
 How to review the affected CW: Search > Contract Workspace (Procurement) > search by CW ID
@@ -1096,16 +1219,18 @@ ProcessContractStatusUpdateRequestInternalError
 Link: https://support.ariba.com/item/view/KB0402285
 Missing Document Type attribute when sending a CLID to an external system
 
-This issue is caused by ERP Errors received from your ERP system. You should be able to resolve the issue by adjusting the content of the affected CW with the corresponding object in your ERP.`
+This issue is caused by ERP Errors received from your ERP system. You should be able to resolve the issue by adjusting the content of the affected CW with the corresponding object in your ERP.`;
+                
+                return {
+                    subject: formatSubject('CLID Request Error', customerName),
+                    body: formatBody(bodyContent)
                 };
             } else {
                 // Email template for when no customer contacts (send to Product Specialist)
-                return {
-                    subject: `Proactive Monitoring - ${customerName} - CLID Request Error`,
-                    body: `Hello ${firstName},
+                const bodyContent = `Hello ${firstName},
 
-Our proactive monitoring queries identified a single Contract Workspaces with a CLID request error.
-The affected CW is in the attached Excel file.
+Our proactive monitoring queries identified several Contract Workspaces with a CLID request error.
+The list of the affected CWs is in the attached Excel file.
 
 How to review the affected CW: Search > Contract Workspace (Procurement) > search by CW ID
 
@@ -1123,23 +1248,50 @@ Missing Document Type attribute when sending a CLID to an external system
 
 This issue is caused by ERP Errors received from the customer's ERP system. To resolve the issue, we need to notify the customer to check and make necessary corrections. Please notify the customer about the issue. In general, the customer should be able to resolve the issue by adjusting the content of the affected CW with the corresponding object in their ERP.
 
-If you want me to email similar notifications directly to the customer (with you in CC), please update the customer contact for proactive monitoring in PSEE Operational Dashboard.`
+If you want me to email similar notifications directly to the customer (with you in CC), please update the customer contact for proactive monitoring in PSEE Operational Dashboard.`;
+                
+                return {
+                    subject: formatSubject('CLID Request Error', customerName),
+                    body: formatBody(bodyContent)
                 };
             }
         }
 
         function generatePAYEmail(customerName, firstName) {
-            return {
-                subject: `Proactive Monitoring - ${customerName} - Payments in status Sending`,
-                body: `Hello ${firstName},
+            const bodyContent = `Hello ${firstName},
 
 Our proactive monitoring queries identified multiple Payments in status Sending. The status is caused by ERP errors & AN errors hence the troubleshooting should be on one-by-one basis.
 
 The list of affected payments is in the attached Excel file.
 
 Please forward the list to the customer.
-If they need additional assistance from our side, please have them submit a support case with SAP Ariba.`
+If they need additional assistance from our side, please have them submit a support case with SAP Ariba.`;
+            
+            return {
+                subject: formatSubject('Payments in status Sending', customerName),
+                body: formatBody(bodyContent)
             };
+        }
+
+        // Update email preview when case number or ITSM ref changes
+        function updateEmailPreview() {
+            // Only update if results are displayed
+            if (document.getElementById('resultsContainer').classList.contains('hidden')) {
+                return;
+            }
+            
+            // Get current input values
+            currentCaseNumber = document.getElementById('caseNumberInput').value.trim();
+            currentItsmRef = document.getElementById('itsmRefInput').value.trim();
+            
+            // Regenerate email template
+            const emailTemplate = generateEmailTemplate(currentMonitoringType, currentCustomerName, currentProductSpecialist, hasCustomerContacts);
+            currentEmailSubject = emailTemplate.subject;
+            currentEmailBody = emailTemplate.body;
+            
+            // Update display
+            document.getElementById('emailSubject').textContent = currentEmailSubject;
+            document.getElementById('emailBody').textContent = currentEmailBody;
         }
 
         // Generate AQL query
@@ -1253,6 +1405,35 @@ ORDER BY ApprovedDate DESC`;
             navigator.clipboard.writeText(currentContacts).then(() => {
                 showCopySuccess('copyContactsBtn');
             });
+        }
+
+        // Open email in Outlook (mailto)
+        function openInOutlook() {
+            const notificationEmail = 'itsm.notification-service@sap.com';
+            let toRecipients = '';
+            let ccRecipients = '';
+
+            if (hasCustomerContacts && currentContacts) {
+                // Customer contacts as recipients, PS and notification service in CC
+                toRecipients = currentContacts;
+                ccRecipients = currentProductSpecialist 
+                    ? `${currentProductSpecialist}, ${notificationEmail}`
+                    : notificationEmail;
+            } else {
+                // Product specialist as recipient, notification service in CC
+                toRecipients = currentProductSpecialist || '';
+                ccRecipients = notificationEmail;
+            }
+
+            // Construct mailto URL
+            const subject = encodeURIComponent(currentEmailSubject);
+            const body = encodeURIComponent(currentEmailBody);
+            const cc = encodeURIComponent(ccRecipients);
+            
+            let mailtoUrl = `mailto:${toRecipients}?subject=${subject}&body=${body}&cc=${cc}`;
+            
+            // Open the mailto link
+            window.location.href = mailtoUrl;
         }
 
         // Show copy success animation for small buttons
