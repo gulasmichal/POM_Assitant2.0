@@ -737,7 +737,7 @@
                     <polyline points="9 15 12 12 15 15"/>
                 </svg>
                 <p class="upload-text">Click to upload or drag and drop</p>
-                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, and PAY_Sending Excel files</p>
+                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, and Stuck_Process_Flow_Projects Excel files</p>
             </div>
         </div>
 
@@ -858,7 +858,7 @@
                 </svg>
             </div>
             <h2 class="empty-title">Upload Monitoring File</h2>
-            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, and PAY_Sending reports.</p>
+            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, and Stuck_Process_Flow_Projects reports.</p>
         </div>
     </main>
 
@@ -881,6 +881,8 @@
         let currentCaseNumber = '';
         let currentItsmRef = '';
         let currentRealm = '';
+        let currentRecordCount = 0;
+        let currentUniqueNames = [];
 
         // File upload handling
         const uploadZone = document.getElementById('uploadZone');
@@ -939,6 +941,12 @@
                     } else if (sheetNames.includes('PAY_Sending')) {
                         mainData = XLSX.utils.sheet_to_json(workbook.Sheets['PAY_Sending']);
                         monitoringType = 'PAY_Sending';
+                    } else if (sheetNames.includes('CR_Sourcing_Confirming')) {
+                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['CR_Sourcing_Confirming']);
+                        monitoringType = 'CR_Sourcing_Confirming';
+                    } else if (sheetNames.includes('Stuck_Process_Flow_Projects')) {
+                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['Stuck_Process_Flow_Projects']);
+                        monitoringType = 'Stuck_Process_Flow_Projects';
                     } else {
                         // Find first non-Info sheet
                         for (const sheet of sheetNames) {
@@ -1002,6 +1010,10 @@
                 statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">CLID Request Error</span>';
             } else if (monitoringType === 'PAY_Sending') {
                 statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">PAY Sending</span>';
+            } else if (monitoringType === 'CR_Sourcing_Confirming') {
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">CR Sourcing Confirming</span>';
+            } else if (monitoringType === 'Stuck_Process_Flow_Projects') {
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Stuck Process Flow Projects</span>';
             } else {
                 statusBadge.innerHTML = `<span class="fiori-status fiori-status-warning">${monitoringType.replace('_', ' ')}</span>`;
             }
@@ -1062,9 +1074,18 @@
                 currentContacts = '';
             }
 
-            // Get unique names
-            const uniqueNames = [...new Set(mainData.map(row => row.UniqueName).filter(Boolean))];
+            // Get unique names (or InternalIds for Stuck_Process_Flow_Projects)
+            let uniqueNames;
+            if (monitoringType === 'Stuck_Process_Flow_Projects') {
+                uniqueNames = [...new Set(mainData.map(row => row.InternalId).filter(Boolean))];
+            } else {
+                uniqueNames = [...new Set(mainData.map(row => row.UniqueName).filter(Boolean))];
+            }
             const recordCount = uniqueNames.length || mainData.length;
+            
+            // Store for email preview updates
+            currentRecordCount = recordCount;
+            currentUniqueNames = uniqueNames;
 
             // Metrics
             const metricsGrid = document.getElementById('metricsGrid');
@@ -1072,6 +1093,8 @@
                              monitoringType === 'RC_Processing' ? 'RC' : 
                              monitoringType === 'CLID_Request_Error' ? 'CLID' :
                              monitoringType === 'PAY_Sending' ? 'PAY' :
+                             monitoringType === 'CR_Sourcing_Confirming' ? 'CR' :
+                             monitoringType === 'Stuck_Process_Flow_Projects' ? 'PFP' :
                              monitoringType.substring(0, 3).toUpperCase();
             metricsGrid.innerHTML = `
                 <div class="fiori-numeric-tile">
@@ -1088,9 +1111,10 @@
             const querySection = document.getElementById('querySection');
             const queryCode = document.getElementById('queryCode');
             
-            if (monitoringType === 'PO_Ordering' || monitoringType === 'RC_Processing') {
+            if (monitoringType === 'PO_Ordering' || monitoringType === 'RC_Processing' || 
+                monitoringType === 'CR_Sourcing_Confirming' || monitoringType === 'Stuck_Process_Flow_Projects') {
                 querySection.classList.remove('hidden');
-                currentQuery = generateQuery(monitoringType, uniqueNames);
+                currentQuery = generateQuery(monitoringType, uniqueNames, mainData);
                 queryCode.textContent = currentQuery;
             } else {
                 querySection.classList.add('hidden');
@@ -1099,7 +1123,7 @@
             // Email template section
             const emailSubject = document.getElementById('emailSubject');
             const emailBody = document.getElementById('emailBody');
-            const emailTemplate = generateEmailTemplate(monitoringType, currentCustomerName, info.productSpecialist, hasCustomerContacts);
+            const emailTemplate = generateEmailTemplate(monitoringType, currentCustomerName, info.productSpecialist, hasCustomerContacts, recordCount, uniqueNames);
             currentEmailSubject = emailTemplate.subject;
             currentEmailBody = emailTemplate.body;
             emailSubject.textContent = currentEmailSubject;
@@ -1120,9 +1144,11 @@
         }
 
         // Generate email template based on type
-        function generateEmailTemplate(type, customerName, productSpecialistEmail, hasCustomerContacts) {
+        function generateEmailTemplate(type, customerName, productSpecialistEmail, hasCustomerContacts, recordCount = 0, uniqueNames = []) {
             const firstName = getFirstNameFromEmail(productSpecialistEmail);
             const greeting = hasCustomerContacts ? 'Hello Team,' : `Hello ${firstName},`;
+            const isSingleRecord = recordCount === 1;
+            const singleUniqueName = uniqueNames.length === 1 ? uniqueNames[0] : '';
             
             switch(type) {
                 case 'PO_Ordering':
@@ -1133,6 +1159,10 @@
                     return generateCLIDEmail(customerName, firstName, hasCustomerContacts);
                 case 'PAY_Sending':
                     return generatePAYEmail(customerName, firstName);
+                case 'CR_Sourcing_Confirming':
+                    return generateCRSourcingConfirmingEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
+                case 'Stuck_Process_Flow_Projects':
+                    return generateStuckProcessFlowProjectsEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
                 default:
                     return {
                         subject: formatSubject(`Proactive Monitoring - ${type.replace(/_/g, ' ')}`, customerName),
@@ -1273,6 +1303,110 @@ If they need additional assistance from our side, please have them submit a supp
             };
         }
 
+        function generateCRSourcingConfirmingEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, uniqueName) {
+            let bodyContent;
+            
+            if (hasCustomerContacts) {
+                if (isSingleRecord) {
+                    // Email for contacts with one CR
+                    bodyContent = `Hello Team,
+
+Our proactive monitoring has identified that contract request ${uniqueName} is currently stuck in status Sourcing Confirming.
+
+This issue can occur for various reasons and may require further investigation, including the potential use of the Repair Integration tool.
+
+Please open a new support case with us referencing this contract request ID and its current status. 
+Our team will be happy to assist you in resolving the matter promptly.`;
+                } else {
+                    // Email for contacts with more CRs
+                    bodyContent = `Hello Team,
+
+Our proactive monitoring has identified that several CRs are currently stuck in status Sourcing Confirming. The list of the affected CRs is in the attached excel file. 
+
+This issue can occur for various reasons and may require further investigation, including the potential use of the Repair Integration tool.
+
+Please open a new support case with us referencing this contract request ID and its current status. 
+Our team will be happy to assist you in resolving the matter promptly.`;
+                }
+            } else {
+                if (isSingleRecord) {
+                    // Email for product specialist with one CR
+                    bodyContent = `Hello ${firstName},
+
+Our proactive monitoring has identified that contract request ${uniqueName} is currently stuck in status Sourcing Confirming.
+
+This issue can occur for various reasons and may require further investigation, including the potential use of the Repair Integration tool.
+
+Please notify the customer about the occurrence. They are advised to open a new support case with us referencing this contract request ID and its current status. 
+Our team will be happy to assist them in resolving the matter promptly.`;
+                } else {
+                    // Email for product specialist with several CRs
+                    bodyContent = `Hello ${firstName},
+
+Our proactive monitoring has identified that several CRs are currently stuck in status Sourcing Confirming. The list of the affected CRs is in the attached excel file. 
+
+This issue can occur for various reasons and may require further investigation, including the potential use of the Repair Integration tool.
+
+Please notify the customer about the occurrence. They are advised to open a new support case with us referencing this contract request ID and its current status. 
+Our team will be happy to assist them in resolving the matter promptly.`;
+                }
+            }
+            
+            return {
+                subject: formatSubject('CR in status Sourcing Confirming', customerName),
+                body: formatBody(bodyContent)
+            };
+        }
+
+        function generateStuckProcessFlowProjectsEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, uniqueName) {
+            let bodyContent;
+            
+            if (hasCustomerContacts) {
+                if (isSingleRecord) {
+                    // Email to customer contacts one record
+                    bodyContent = `Hello Team,
+
+Our proactive monitoring queries identified SM Process Project ${uniqueName} in status In Process.
+All associated questionnaires and tasks are in a compliant state, hence the above WS status seems not to be compliant.
+
+If you need additional assistance, you are welcome to submit a support case with SAP Ariba.`;
+                } else {
+                    // Email to customer contacts more records
+                    bodyContent = `Hello Team,
+
+Our proactive monitoring queries identified several SM Process Projects in status In Process. You can find the affected Projects in the attached excel file.
+All associated questionnaires and tasks are in a compliant state, hence the above WS status seems not to be compliant.
+
+If you need additional assistance, you are welcome to submit a support case with SAP Ariba.`;
+                }
+            } else {
+                if (isSingleRecord) {
+                    // Email to product specialist one record
+                    bodyContent = `Hello ${firstName},
+
+Our proactive monitoring queries identified SM Process Project ${uniqueName} in status In Process.
+All associated questionnaires and tasks are in a compliant state, hence the above WS status seems not to be compliant.
+
+Please notify the customer about this occurrence.
+If they need additional assistance, they are welcome to submit a support case with SAP Ariba.`;
+                } else {
+                    // Email to product specialist more records
+                    bodyContent = `Hello ${firstName},
+
+Our proactive monitoring queries identified several SM Process Projects in status In Process. You can find the affected Projects in the attached excel file.
+All associated questionnaires and tasks are in a compliant state, hence the above WS status seems not to be compliant.
+
+Please notify the customer about this occurrence.
+If they need additional assistance, they are welcome to submit a support case with SAP Ariba.`;
+                }
+            }
+            
+            return {
+                subject: formatSubject('SM Process Projects in status In Process', customerName),
+                body: formatBody(bodyContent)
+            };
+        }
+
         // Update email preview when case number or ITSM ref changes
         function updateEmailPreview() {
             // Only update if results are displayed
@@ -1285,7 +1419,7 @@ If they need additional assistance from our side, please have them submit a supp
             currentItsmRef = document.getElementById('itsmRefInput').value.trim();
             
             // Regenerate email template
-            const emailTemplate = generateEmailTemplate(currentMonitoringType, currentCustomerName, currentProductSpecialist, hasCustomerContacts);
+            const emailTemplate = generateEmailTemplate(currentMonitoringType, currentCustomerName, currentProductSpecialist, hasCustomerContacts, currentRecordCount, currentUniqueNames);
             currentEmailSubject = emailTemplate.subject;
             currentEmailBody = emailTemplate.body;
             
@@ -1295,7 +1429,7 @@ If they need additional assistance from our side, please have them submit a supp
         }
 
         // Generate AQL query
-        function generateQuery(type, uniqueNames) {
+        function generateQuery(type, uniqueNames, mainData = []) {
             const namesStr = uniqueNames.map(n => `'${n}'`).join(', ');
             
             if (type === 'PO_Ordering') {
@@ -1321,6 +1455,44 @@ this
 FROM ariba.purchasing.core.PurchaseOrder
 WHERE UniqueName IN (${namesStr})
 ORDER BY StatusString, UniqueName, TimeCreated, Recipients.OrderingMethod`;
+            } else if (type === 'RC_Processing') {
+                return `SELECT DISTINCT UniqueName as "Id",
+UniqueName,
+StatusString,
+CreateDate,
+ApprovedDate,
+'Awaiting processing' ProcessedStateString
+FROM ariba.receiving.core.Receipt
+WHERE StatusString = 'Approved'
+AND ProcessedState = 1
+AND UniqueName IN (${namesStr})
+ORDER BY ApprovedDate DESC`;
+            } else if (type === 'CR_Sourcing_Confirming') {
+                return `SELECT
+UniqueName,
+StatusString,
+TimeCreated,
+TimeUpdated,
+"Active" "Active",
+this
+FROM ContractRequest INCLUDE INACTIVE
+WHERE UniqueName IN (${namesStr})
+ORDER BY TimeCreated`;
+            } else if (type === 'Stuck_Process_Flow_Projects') {
+                // For Stuck_Process_Flow_Projects, we use InternalId instead of UniqueName
+                const internalIds = [...new Set(mainData.map(row => row.InternalId).filter(Boolean))];
+                const idsStr = internalIds.map(n => `'${n}'`).join(', ');
+                return `SELECT DISTINCT
+InternalId AS "Id",
+InternalId,
+Title,
+ProcessFlowStatus,
+ProjectAddin.Plan.EndDateTime AS "Plan End Date",
+ProjectAddin.Plan.Status AS "Plan Status"
+FROM ariba.sourcing.content.SMProcessFlowProject
+WHERE ProcessFlowStatus NOT IN ('ConditionallyApproved','PendingDecision','Approved','Denied','Cancelled')
+AND InternalId IN (${idsStr})
+ORDER BY InternalId`;
             } else {
                 return `SELECT DISTINCT UniqueName as "Id",
 UniqueName,
