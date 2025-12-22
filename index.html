@@ -737,7 +737,7 @@
                     <polyline points="9 15 12 12 15 15"/>
                 </svg>
                 <p class="upload-text">Click to upload or drag and drop</p>
-                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, and PAY_Sending Excel files</p>
+                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, and Req_Approved_No_PO Excel files</p>
             </div>
         </div>
 
@@ -858,7 +858,7 @@
                 </svg>
             </div>
             <h2 class="empty-title">Upload Monitoring File</h2>
-            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, and PAY_Sending reports.</p>
+            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, and Req_Approved_No_PO reports.</p>
         </div>
     </main>
 
@@ -939,6 +939,9 @@
                     } else if (sheetNames.includes('PAY_Sending')) {
                         mainData = XLSX.utils.sheet_to_json(workbook.Sheets['PAY_Sending']);
                         monitoringType = 'PAY_Sending';
+                    } else if (sheetNames.includes('Req_Approved_No_PO')) {
+                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['Req_Approved_No_PO']);
+                        monitoringType = 'Req_Approved_No_PO';
                     } else {
                         // Find first non-Info sheet
                         for (const sheet of sheetNames) {
@@ -1002,6 +1005,8 @@
                 statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">CLID Request Error</span>';
             } else if (monitoringType === 'PAY_Sending') {
                 statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">PAY Sending</span>';
+            } else if (monitoringType === 'Req_Approved_No_PO') {
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Req Approved No PO</span>';
             } else {
                 statusBadge.innerHTML = `<span class="fiori-status fiori-status-warning">${monitoringType.replace('_', ' ')}</span>`;
             }
@@ -1072,6 +1077,7 @@
                              monitoringType === 'RC_Processing' ? 'RC' : 
                              monitoringType === 'CLID_Request_Error' ? 'CLID' :
                              monitoringType === 'PAY_Sending' ? 'PAY' :
+                             monitoringType === 'Req_Approved_No_PO' ? 'PR' :
                              monitoringType.substring(0, 3).toUpperCase();
             metricsGrid.innerHTML = `
                 <div class="fiori-numeric-tile">
@@ -1133,6 +1139,8 @@
                     return generateCLIDEmail(customerName, firstName, hasCustomerContacts);
                 case 'PAY_Sending':
                     return generatePAYEmail(customerName, firstName);
+                case 'Req_Approved_No_PO':
+                    return generateReqApprovedNoPOEmail(customerName, firstName, hasCustomerContacts);
                 default:
                     return {
                         subject: formatSubject(`Proactive Monitoring - ${type.replace(/_/g, ' ')}`, customerName),
@@ -1271,6 +1279,74 @@ If they need additional assistance from our side, please have them submit a supp
                 subject: formatSubject('Payments in status Sending', customerName),
                 body: formatBody(bodyContent)
             };
+        }
+
+        function generateReqApprovedNoPOEmail(customerName, firstName, hasCustomerContacts) {
+            // Get unique names to determine single vs multiple PRs
+            const uniqueNames = currentData ? [...new Set(currentData.map(row => row.UniqueName).filter(Boolean))] : [];
+            const recordCount = uniqueNames.length || (currentData ? currentData.length : 0);
+            const isSinglePR = recordCount === 1;
+            const singlePRName = isSinglePR && uniqueNames.length > 0 ? uniqueNames[0] : '';
+
+            if (hasCustomerContacts) {
+                // Email to customer contacts
+                if (isSinglePR) {
+                    const bodyContent = `Hello Team,
+
+our proactive monitoring queries identified ${singlePRName} in status Approved.
+
+<Insert your investigation of the issue here>
+
+If you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.`;
+                    return {
+                        subject: formatSubject('Requisition in status Approved with no PO', customerName),
+                        body: formatBody(bodyContent)
+                    };
+                } else {
+                    const bodyContent = `Hello Team,
+
+our proactive monitoring queries identified several PRs in status Approved.
+
+You can find the list of the PRs in the attached Excel file.
+
+<Insert your investigation of the issue here>
+
+If you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.`;
+                    return {
+                        subject: formatSubject('Requisition in status Approved with no PO', customerName),
+                        body: formatBody(bodyContent)
+                    };
+                }
+            } else {
+                // Email to Product Specialist
+                if (isSinglePR) {
+                    const bodyContent = `Hello ${firstName},
+
+our proactive monitoring queries identified ${singlePRName} in status Approved.
+
+<Insert your investigation of the issue here>
+
+Please notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.`;
+                    return {
+                        subject: formatSubject('Requisition in status Approved with no PO', customerName),
+                        body: formatBody(bodyContent)
+                    };
+                } else {
+                    const bodyContent = `Hello ${firstName},
+
+our proactive monitoring queries identified several PRs in status Approved.
+
+You can find the list of the PRs in the attached Excel file.
+
+<Insert your investigation of the issue here>
+
+Please notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.`;
+                    return {
+                        subject: formatSubject('Requisition in status Approved with no PO', customerName),
+                        body: formatBody(bodyContent)
+                    };
+                }
+            }
         }
 
         // Update email preview when case number or ITSM ref changes
