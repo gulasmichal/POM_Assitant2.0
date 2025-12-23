@@ -737,7 +737,7 @@
                     <polyline points="9 15 12 12 15 15"/>
                 </svg>
                 <p class="upload-text">Click to upload or drag and drop</p>
-                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, OK2Pay_Empty_Export, and Ext_Tax_Failure Excel files</p>
+                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, OK2Pay_Empty_Export, Ext_Tax_Failure, and INV_Approved Excel files</p>
             </div>
         </div>
 
@@ -858,7 +858,7 @@
                 </svg>
             </div>
             <h2 class="empty-title">Upload Monitoring File</h2>
-            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, OK2Pay_Empty_Export, and Ext_Tax_Failure reports.</p>
+            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, OK2Pay_Empty_Export, Ext_Tax_Failure, and INV_Approved reports.</p>
         </div>
     </main>
 
@@ -959,6 +959,9 @@
                     } else if (sheetNames.includes('Ext_Tax_Failure')) {
                         mainData = XLSX.utils.sheet_to_json(workbook.Sheets['Ext_Tax_Failure']);
                         monitoringType = 'Ext_Tax_Failure';
+                    } else if (sheetNames.includes('INV_Approved')) {
+                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['INV_Approved']);
+                        monitoringType = 'INV_Approved';
                     } else {
                         // Find first non-Info sheet
                         for (const sheet of sheetNames) {
@@ -1034,6 +1037,8 @@
                 statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">OK2Pay Empty Export</span>';
             } else if (monitoringType === 'Ext_Tax_Failure') {
                 statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Ext Tax Failure</span>';
+            } else if (monitoringType === 'INV_Approved') {
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">INV Approved</span>';
             } else {
                 statusBadge.innerHTML = `<span class="fiori-status fiori-status-warning">${monitoringType.replace('_', ' ')}</span>`;
             }
@@ -1119,6 +1124,7 @@
                              monitoringType === 'Appr_Sbmtd_No_ActAppr' ? 'APPR' :
                              monitoringType === 'OK2Pay_Empty_Export' ? 'OK2P' :
                              monitoringType === 'Ext_Tax_Failure' ? 'IR' :
+                             monitoringType === 'INV_Approved' ? 'INV' :
                              monitoringType.substring(0, 3).toUpperCase();
             metricsGrid.innerHTML = `
                 <div class="fiori-numeric-tile">
@@ -1196,6 +1202,8 @@
                     return generateOK2PayEmptyExportEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
                 case 'Ext_Tax_Failure':
                     return generateExtTaxFailureEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
+                case 'INV_Approved':
+                    return generateINVApprovedEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
                 default:
                     return {
                         subject: formatSubject(`Proactive Monitoring - ${type.replace(/_/g, ' ')}`, customerName),
@@ -1664,6 +1672,69 @@ Please notify the customer about the occurrence. If they need additional assista
             
             return {
                 subject: formatSubject('External Tax Engine Failure', customerName),
+                body: formatBody(bodyContent)
+            };
+        }
+
+        function generateINVApprovedEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, uniqueName) {
+            let bodyContent;
+            
+            if (hasCustomerContacts) {
+                if (isSingleRecord) {
+                    // Email to customer contacts with one invoice
+                    bodyContent = `Hello Team,
+
+our proactive monitoring queries found one invoice in status Approved: ${uniqueName}
+
+Insert your investigation !!!!!!!!!!!!!!!
+
+The invoice requires additional technical investigation beyond the scope of proactive monitoring.
+
+If you need additional assistance with the above, you are welcome to submit a support case with SAP Ariba.`;
+                } else {
+                    // Email to customer contacts with more invoices
+                    bodyContent = `Hello Team,
+
+our proactive monitoring queries found several invoices in status Approved.
+
+The list of affected INVs is in the attached Excel file.
+
+Insert your investigation !!!!!!!!!!!!!!!
+
+The invoice requires additional technical investigation beyond the scope of proactive monitoring.
+
+If you need additional assistance with the above, you are welcome to submit a support case with SAP Ariba.`;
+                }
+            } else {
+                if (isSingleRecord) {
+                    // Email to PS with one invoice
+                    bodyContent = `Hello ${firstName},
+
+our proactive monitoring queries found one invoice in status Approved: ${uniqueName}
+
+Insert your investigation !!!!!!!!!!!!!!!
+
+The invoice requires additional technical investigation beyond the scope of proactive monitoring.
+
+Please notify the customer about the occurrence. If they need additional assistance with the above, they are welcome to submit a support case with SAP Ariba.`;
+                } else {
+                    // Email to PS with more invoices
+                    bodyContent = `Hello ${firstName},
+
+our proactive monitoring queries found several invoices in status Approved.
+
+The list of affected INVs is in the attached Excel file.
+
+Insert your investigation !!!!!!!!!!!!!!!
+
+The invoice requires additional technical investigation beyond the scope of proactive monitoring.
+
+Please notify the customer about the occurrence. If they need additional assistance with the above, they are welcome to submit a support case with SAP Ariba.`;
+                }
+            }
+            
+            return {
+                subject: formatSubject('Invoice in status Approved', customerName),
                 body: formatBody(bodyContent)
             };
         }
