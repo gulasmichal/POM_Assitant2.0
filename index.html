@@ -737,7 +737,7 @@
                     <polyline points="9 15 12 12 15 15"/>
                 </svg>
                 <p class="upload-text">Click to upload or drag and drop</p>
-                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, and OK2Pay_Empty_Export Excel files</p>
+                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, OK2Pay_Empty_Export, and Ext_Tax_Failure Excel files</p>
             </div>
         </div>
 
@@ -858,7 +858,7 @@
                 </svg>
             </div>
             <h2 class="empty-title">Upload Monitoring File</h2>
-            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, and OK2Pay_Empty_Export reports.</p>
+            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, OK2Pay_Empty_Export, and Ext_Tax_Failure reports.</p>
         </div>
     </main>
 
@@ -956,6 +956,9 @@
                     } else if (sheetNames.includes('OK2Pay_Empty_Export')) {
                         mainData = XLSX.utils.sheet_to_json(workbook.Sheets['OK2Pay_Empty_Export']);
                         monitoringType = 'OK2Pay_Empty_Export';
+                    } else if (sheetNames.includes('Ext_Tax_Failure')) {
+                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['Ext_Tax_Failure']);
+                        monitoringType = 'Ext_Tax_Failure';
                     } else {
                         // Find first non-Info sheet
                         for (const sheet of sheetNames) {
@@ -1029,6 +1032,8 @@
                 statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Appr Sbmtd No ActAppr</span>';
             } else if (monitoringType === 'OK2Pay_Empty_Export') {
                 statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">OK2Pay Empty Export</span>';
+            } else if (monitoringType === 'Ext_Tax_Failure') {
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Ext Tax Failure</span>';
             } else {
                 statusBadge.innerHTML = `<span class="fiori-status fiori-status-warning">${monitoringType.replace('_', ' ')}</span>`;
             }
@@ -1113,6 +1118,7 @@
                              monitoringType === 'Req_Approved_No_PO' ? 'PR' :
                              monitoringType === 'Appr_Sbmtd_No_ActAppr' ? 'APPR' :
                              monitoringType === 'OK2Pay_Empty_Export' ? 'OK2P' :
+                             monitoringType === 'Ext_Tax_Failure' ? 'IR' :
                              monitoringType.substring(0, 3).toUpperCase();
             metricsGrid.innerHTML = `
                 <div class="fiori-numeric-tile">
@@ -1131,7 +1137,7 @@
             
             if (monitoringType === 'PO_Ordering' || monitoringType === 'RC_Processing' || 
                 monitoringType === 'CR_Sourcing_Confirming' || monitoringType === 'Stuck_Process_Flow_Projects' ||
-                monitoringType === 'OK2Pay_Empty_Export') {
+                monitoringType === 'OK2Pay_Empty_Export' || monitoringType === 'Ext_Tax_Failure') {
                 querySection.classList.remove('hidden');
                 currentQuery = generateQuery(monitoringType, uniqueNames, mainData);
                 queryCode.textContent = currentQuery;
@@ -1188,6 +1194,8 @@
                     return generateApprSbmtdNoActApprEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
                 case 'OK2Pay_Empty_Export':
                     return generateOK2PayEmptyExportEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
+                case 'Ext_Tax_Failure':
+                    return generateExtTaxFailureEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
                 default:
                     return {
                         subject: formatSubject(`Proactive Monitoring - ${type.replace(/_/g, ' ')}`, customerName),
@@ -1597,6 +1605,69 @@ Please notify the customer about the occurrence. If they need additional assista
             };
         }
 
+        function generateExtTaxFailureEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, uniqueName) {
+            let bodyContent;
+            
+            if (hasCustomerContacts) {
+                if (isSingleRecord) {
+                    // Email to customer contacts with one IR
+                    bodyContent = `Hello Team,
+
+Our proactive monitoring queries identified IR ${uniqueName} in status Awaiting Tax Engine Confirmation.
+
+Based on the documentation https://support.ariba.com/item/view/KB0406386, we see this status is if an error occurs in the response from the tax calculation engine. The IR status remains Awaiting Tax Engine Confirmation until the tax calculation response is received successfully. IR in this status continues to be sent to the third-party tax system every day.
+
+The identified occurrence requires end user attention.
+
+If you need additional assistance with the above occurrence, you are welcome to submit a support case with SAP Ariba.`;
+                } else {
+                    // Email to customer contacts with more IRs
+                    bodyContent = `Hello Team,
+
+Our proactive monitoring queries identified several IRs in status Awaiting Tax Engine Confirmation.
+
+The list of affected IRs is in the attached Excel file.
+
+Based on the documentation https://support.ariba.com/item/view/KB0406386, we see this status is if an error occurs in the response from the tax calculation engine. The IR status remains Awaiting Tax Engine Confirmation until the tax calculation response is received successfully. IR in this status continues to be sent to the third-party tax system every day.
+
+The identified occurrences require end user attention on one-by-one basis.
+
+If you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.`;
+                }
+            } else {
+                if (isSingleRecord) {
+                    // Email to PS with one IR
+                    bodyContent = `Hello ${firstName},
+
+Our proactive monitoring queries identified IR ${uniqueName} in status Awaiting Tax Engine Confirmation.
+
+Based on the documentation https://support.ariba.com/item/view/KB0406386, we see this status is if an error occurs in the response from the tax calculation engine. The IR status remains Awaiting Tax Engine Confirmation until the tax calculation response is received successfully. IR in this status continues to be sent to the third-party tax system every day.
+
+The identified occurrence requires end user attention.
+
+Please notify the customer about the occurrence. If they need additional assistance with the above occurrence, they are welcome to submit a support case with SAP Ariba.`;
+                } else {
+                    // Email to PS with more IRs
+                    bodyContent = `Hello ${firstName},
+
+Our proactive monitoring queries identified several IRs in status Awaiting Tax Engine Confirmation.
+
+The list of affected IRs is in the attached Excel file.
+
+Based on the documentation https://support.ariba.com/item/view/KB0406386, we see this status is if an error occurs in the response from the tax calculation engine. The IR status remains Awaiting Tax Engine Confirmation until the tax calculation response is received successfully. IR in this status continues to be sent to the third-party tax system every day.
+
+The identified occurrences require end user attention on one-by-one basis.
+
+Please notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.`;
+                }
+            }
+            
+            return {
+                subject: formatSubject('External Tax Engine Failure', customerName),
+                body: formatBody(bodyContent)
+            };
+        }
+
         // Update email preview when case number or ITSM ref changes
         function updateEmailPreview() {
             // Only update if results are displayed
@@ -1698,6 +1769,16 @@ AND (
   (CurrentTime() - EndRunDate) <= 1
 )
 Order by 3 desc`;
+            } else if (type === 'Ext_Tax_Failure') {
+                return `SELECT
+UniqueName,
+StatusString,
+TimeCreated,
+TimeUpdated,
+this
+FROM InvoiceReconciliation
+WHERE UniqueName IN (${namesStr})
+ORDER BY TimeCreated`;
             } else {
                 return `SELECT DISTINCT UniqueName as "Id",
 UniqueName,
