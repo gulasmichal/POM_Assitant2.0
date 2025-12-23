@@ -737,7 +737,7 @@
                     <polyline points="9 15 12 12 15 15"/>
                 </svg>
                 <p class="upload-text">Click to upload or drag and drop</p>
-                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, and Appr_Sbmtd_No_ActAppr Excel files</p>
+                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, and OK2Pay_Empty_Export Excel files</p>
             </div>
         </div>
 
@@ -858,7 +858,7 @@
                 </svg>
             </div>
             <h2 class="empty-title">Upload Monitoring File</h2>
-            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, and Appr_Sbmtd_No_ActAppr reports.</p>
+            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, and OK2Pay_Empty_Export reports.</p>
         </div>
     </main>
 
@@ -953,6 +953,9 @@
                     } else if (sheetNames.includes('Appr_Sbmtd_No_ActAppr')) {
                         mainData = XLSX.utils.sheet_to_json(workbook.Sheets['Appr_Sbmtd_No_ActAppr']);
                         monitoringType = 'Appr_Sbmtd_No_ActAppr';
+                    } else if (sheetNames.includes('OK2Pay_Empty_Export')) {
+                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['OK2Pay_Empty_Export']);
+                        monitoringType = 'OK2Pay_Empty_Export';
                     } else {
                         // Find first non-Info sheet
                         for (const sheet of sheetNames) {
@@ -1024,6 +1027,8 @@
                 statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Req Approved No PO</span>';
             } else if (monitoringType === 'Appr_Sbmtd_No_ActAppr') {
                 statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Appr Sbmtd No ActAppr</span>';
+            } else if (monitoringType === 'OK2Pay_Empty_Export') {
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">OK2Pay Empty Export</span>';
             } else {
                 statusBadge.innerHTML = `<span class="fiori-status fiori-status-warning">${monitoringType.replace('_', ' ')}</span>`;
             }
@@ -1107,6 +1112,7 @@
                              monitoringType === 'Stuck_Process_Flow_Projects' ? 'PFP' :
                              monitoringType === 'Req_Approved_No_PO' ? 'PR' :
                              monitoringType === 'Appr_Sbmtd_No_ActAppr' ? 'APPR' :
+                             monitoringType === 'OK2Pay_Empty_Export' ? 'OK2P' :
                              monitoringType.substring(0, 3).toUpperCase();
             metricsGrid.innerHTML = `
                 <div class="fiori-numeric-tile">
@@ -1124,7 +1130,8 @@
             const queryCode = document.getElementById('queryCode');
             
             if (monitoringType === 'PO_Ordering' || monitoringType === 'RC_Processing' || 
-                monitoringType === 'CR_Sourcing_Confirming' || monitoringType === 'Stuck_Process_Flow_Projects') {
+                monitoringType === 'CR_Sourcing_Confirming' || monitoringType === 'Stuck_Process_Flow_Projects' ||
+                monitoringType === 'OK2Pay_Empty_Export') {
                 querySection.classList.remove('hidden');
                 currentQuery = generateQuery(monitoringType, uniqueNames, mainData);
                 queryCode.textContent = currentQuery;
@@ -1179,6 +1186,8 @@
                     return generateReqApprovedNoPOEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
                 case 'Appr_Sbmtd_No_ActAppr':
                     return generateApprSbmtdNoActApprEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
+                case 'OK2Pay_Empty_Export':
+                    return generateOK2PayEmptyExportEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, singleUniqueName);
                 default:
                     return {
                         subject: formatSubject(`Proactive Monitoring - ${type.replace(/_/g, ' ')}`, customerName),
@@ -1533,6 +1542,61 @@ Please notify the customer about the occurrence. If they need additional assista
             };
         }
 
+        function generateOK2PayEmptyExportEmail(customerName, firstName, hasCustomerContacts, isSingleRecord, uniqueName) {
+            let bodyContent;
+            
+            if (hasCustomerContacts) {
+                if (isSingleRecord) {
+                    // Email to customer contacts with one record
+                    bodyContent = `Hello Team,
+
+our proactive monitoring queries identified OK2Pay export ${uniqueName} with 0 records exported.
+
+<Insert your investigation of the issue here>
+
+If you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.`;
+                } else {
+                    // Email to customer contacts with more records
+                    bodyContent = `Hello Team,
+
+our proactive monitoring queries identified several OK2Pay exports with 0 records exported.
+
+You can find the list of the affected exports in the attached Excel file.
+
+<Insert your investigation of the issue here>
+
+If you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.`;
+                }
+            } else {
+                if (isSingleRecord) {
+                    // Email to PS with one record
+                    bodyContent = `Hello ${firstName},
+
+our proactive monitoring queries identified OK2Pay export ${uniqueName} with 0 records exported.
+
+<Insert your investigation of the issue here>
+
+Please notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.`;
+                } else {
+                    // Email to PS with more records
+                    bodyContent = `Hello ${firstName},
+
+our proactive monitoring queries identified several OK2Pay exports with 0 records exported.
+
+You can find the list of the affected exports in the attached Excel file.
+
+<Insert your investigation of the issue here>
+
+Please notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.`;
+                }
+            }
+            
+            return {
+                subject: formatSubject('OK2Pay Empty Export', customerName),
+                body: formatBody(bodyContent)
+            };
+        }
+
         // Update email preview when case number or ITSM ref changes
         function updateEmailPreview() {
             // Only update if results are displayed
@@ -1619,6 +1683,21 @@ FROM ariba.sourcing.content.SMProcessFlowProject
 WHERE ProcessFlowStatus NOT IN ('ConditionallyApproved','PendingDecision','Approved','Denied','Cancelled')
 AND InternalId IN (${idsStr})
 ORDER BY InternalId`;
+            } else if (type === 'OK2Pay_Empty_Export') {
+                return `SELECT UniqueName AS "Id",
+UniqueName,
+StartRunDate,
+EndRunDate,
+AdapterName,
+CurrentTime() AS "QueryDate"
+FROM ariba.integration.core.IntegrationEventLog
+WHERE AdapterName LIKE '%PaymentExport_CSV'
+AND RecordsExported = 0
+AND (
+  (CurrentTime() - StartRunDate) <= 1 OR
+  (CurrentTime() - EndRunDate) <= 1
+)
+Order by 3 desc`;
             } else {
                 return `SELECT DISTINCT UniqueName as "Id",
 UniqueName,
