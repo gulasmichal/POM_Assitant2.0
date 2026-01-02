@@ -1,0 +1,336 @@
+{
+  "version": "1.0",
+  "lastModified": "2026-01-02",
+  
+  "monitoringTypes": {
+    "PO_Ordering": {
+      "displayName": "PO Ordering",
+      "description": "Purchase Orders stuck in Ordering status",
+      "statusColor": "info",
+      "idField": "UniqueName",
+      "typeLabel": "PO",
+      "hasQuery": true,
+      
+      "queryTemplate": "SELECT\nUniqueName \"PO ID Ariba\",\nOrderID \"Order ID SAP\",\nName \"PO Title\",\nStatusString \"Status\",\n\"Active\" \"Active\",\nTimeCreated,\nTimeUpdated,\nRecipients.OrderingMethod \"Ordering Method\",\nRecipients.State \"Recipient State\",\nRecipients.FailureReason \"Failure Reason\",\nRecipients.TimeCreated \"Recipient TimeCreated\",\nRecipients.TimeUpdated \"Recipient TimeUpdated\",\nSupplier.Name as \"Supplier Name\",\nSupplier.UniqueName as \"Supplier ID\",\nSupplierLocation.PreferredOrderingMethod as SupplierOrderingMethod,\nSupplierLocation.EmailAddress as EmailAddress,\nSupplierLocation.AribaNetworkId as AribaNetworkId,\nthis\nFROM ariba.purchasing.core.PurchaseOrder\nWHERE UniqueName IN ({{uniqueNamesList}})\nORDER BY StatusString, UniqueName, TimeCreated, Recipients.OrderingMethod",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - POs in status = Ordering",
+          "body": "Hello Team,\n\nOur Proactive Monitoring queries identified several Ariba purchase orders with status = Ordering.\nThe cause of this status is:\n• lack of response from the ERP side. Please check the status of these POs in your ERP.\n• missing trading relationship with supplier in SAP Business Network\n\nIf you need further assistance, you are welcome to submit a new support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - POs in status = Ordering",
+          "body": "Hello {{firstName}},\n\nOur Proactive Monitoring queries identified several Ariba purchase orders with status = Ordering.\nThe cause of this status is:\n• lack of response from the ERP side. Please check the status of these POs in your ERP.\n• missing trading relationship with supplier in SAP Business Network\n\nPlease forward this information to the customer. If they need further assistance, they are welcome to submit a new support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - POs in status = Ordering",
+          "body": "Hello Team,\n\nOur Proactive Monitoring queries identified several Ariba purchase orders with status = Ordering.\nThe cause of this status is:\n• lack of response from the ERP side. Please check the status of these POs in your ERP.\n• missing trading relationship with supplier in SAP Business Network\n\nIf you need further assistance, you are welcome to submit a new support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - POs in status = Ordering",
+          "body": "Hello {{firstName}},\n\nOur Proactive Monitoring queries identified several Ariba purchase orders with status = Ordering.\nThe cause of this status is:\n• lack of response from the ERP side. Please check the status of these POs in your ERP.\n• missing trading relationship with supplier in SAP Business Network\n\nPlease forward this information to the customer. If they need further assistance, they are welcome to submit a new support case with SAP Ariba.\n\n{{itsmRef}}"
+        }
+      }
+    },
+    
+    "RC_Processing": {
+      "displayName": "RC Processing",
+      "description": "Receipts stuck in Processing status",
+      "statusColor": "success",
+      "idField": "UniqueName",
+      "typeLabel": "RC",
+      "hasQuery": true,
+      
+      "queryTemplate": "SELECT DISTINCT UniqueName as \"Id\",\nUniqueName,\nStatusString,\nCreateDate,\nApprovedDate,\n'Awaiting processing' ProcessedStateString\nFROM ariba.receiving.core.Receipt\nWHERE StatusString = 'Approved'\nAND ProcessedState = 1\nAND UniqueName IN ({{uniqueNamesList}})\nORDER BY ApprovedDate DESC",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - RCs in Processing Status = Processing",
+          "body": "Hello Team,\n\nOur Proactive Monitoring queries identified several Ariba receipts with Processing State = Processing.\nThese receipts were approved in Ariba and send to the ERP system.\n\nThe ERP system rejected the receipts with due to various errors. The errors may be viewed in the Comments section when accessing individual receipts in SAP Ariba Buying & Invoicing.\nThe list of affected RCs is in the attached Excel file.\n\nAriba retries 4 times a day to re-send the receipts to ERP until they are successfully processed or the max number of retries is used.\nThe maximum number of retries is determined by parameter Application.Receiving.MaxRetriesToSendPushFailedReceipts set in your realm.\n\nIf you need further assistance, you are welcome to submit a new support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - RCs in Processing Status = Processing",
+          "body": "Hello {{firstName}},\n\nOur Proactive Monitoring queries identified several Ariba receipts with Processing State = Processing.\nThese receipts were approved in Ariba and send to the ERP system.\n\nThe ERP system rejected the receipts with due to various errors. The errors may be viewed in the Comments section when accessing individual receipts in SAP Ariba Buying & Invoicing.\nThe list of affected RCs is in the attached Excel file.\n\nAriba retries 4 times a day to re-send the receipts to ERP until they are successfully processed or the max number of retries is used.\nThe maximum number of retries is determined by parameter Application.Receiving.MaxRetriesToSendPushFailedReceipts set in your realm.\n\nPlease forward this information to the customer. If they need further assistance, they are welcome to submit a new support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - RCs in Processing Status = Processing",
+          "body": "Hello Team,\n\nOur Proactive Monitoring queries identified several Ariba receipts with Processing State = Processing.\nThese receipts were approved in Ariba and send to the ERP system.\n\nThe ERP system rejected the receipts with due to various errors. The errors may be viewed in the Comments section when accessing individual receipts in SAP Ariba Buying & Invoicing.\nThe list of affected RCs is in the attached Excel file.\n\nAriba retries 4 times a day to re-send the receipts to ERP until they are successfully processed or the max number of retries is used.\nThe maximum number of retries is determined by parameter Application.Receiving.MaxRetriesToSendPushFailedReceipts set in your realm.\n\nIf you need further assistance, you are welcome to submit a new support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - RCs in Processing Status = Processing",
+          "body": "Hello {{firstName}},\n\nOur Proactive Monitoring queries identified several Ariba receipts with Processing State = Processing.\nThese receipts were approved in Ariba and send to the ERP system.\n\nThe ERP system rejected the receipts with due to various errors. The errors may be viewed in the Comments section when accessing individual receipts in SAP Ariba Buying & Invoicing.\nThe list of affected RCs is in the attached Excel file.\n\nAriba retries 4 times a day to re-send the receipts to ERP until they are successfully processed or the max number of retries is used.\nThe maximum number of retries is determined by parameter Application.Receiving.MaxRetriesToSendPushFailedReceipts set in your realm.\n\nPlease forward this information to the customer. If they need further assistance, they are welcome to submit a new support case with SAP Ariba.\n\n{{itsmRef}}"
+        }
+      }
+    },
+    
+    "CLID_Request_Error": {
+      "displayName": "CLID Request Error",
+      "description": "Contract Workspaces with CLID request errors",
+      "statusColor": "warning",
+      "idField": "UniqueName",
+      "typeLabel": "CLID",
+      "hasQuery": false,
+      
+      "queryTemplate": "",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - CLID Request Error",
+          "body": "Hello Team,\n\nOur proactive monitoring queries identified several Contract Workspaces with a CLID request error.\nThe list of the affected CWs is in the attached Excel file.\n\nHow to review the affected CW: Search > Contract Workspace (Procurement) > search by CW ID\n\nUsual CLID request error types:\n\nReceivedContractStatusUpdateRequestFailure\nReceivedContractStatusUpdateRequestFailure error indicates that the CSUR was successfully processed without any issue, but 500 (failure) response is returned by ERP meaning the corresponding Contract document was NOT created on ERP side. Reviewing the details (in History), we can see the error is caused by Master data, which means that fix requires client engagement.\n\nSendContractRequestFailureWithContractID\nLink: https://support.ariba.com/item/view/KB0409688\n\nProcessContractStatusUpdateRequestInternalError\nLink: https://support.ariba.com/item/view/KB0402285\nMissing Document Type attribute when sending a CLID to an external system\n\nThis issue is caused by ERP Errors received from your ERP system. You should be able to resolve the issue by adjusting the content of the affected CW with the corresponding object in your ERP.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - CLID Request Error",
+          "body": "Hello {{firstName}},\n\nOur proactive monitoring queries identified several Contract Workspaces with a CLID request error.\nThe list of the affected CWs is in the attached Excel file.\n\nHow to review the affected CW: Search > Contract Workspace (Procurement) > search by CW ID\n\nUsual CLID request error types:\n\nReceivedContractStatusUpdateRequestFailure\nReceivedContractStatusUpdateRequestFailure error indicates that the CSUR was successfully processed without any issue, but 500 (failure) response is returned by ERP meaning the corresponding Contract document was NOT created on ERP side. Reviewing the details (in History), we can see the error is caused by Master data, which means that fix requires client engagement.\n\nSendContractRequestFailureWithContractID\nLink: https://support.ariba.com/item/view/KB0409688\n\nProcessContractStatusUpdateRequestInternalError\nLink: https://support.ariba.com/item/view/KB0402285\nMissing Document Type attribute when sending a CLID to an external system\n\nThis issue is caused by ERP Errors received from the customer's ERP system. To resolve the issue, we need to notify the customer to check and make necessary corrections. Please notify the customer about the issue. In general, the customer should be able to resolve the issue by adjusting the content of the affected CW with the corresponding object in their ERP.\n\nIf you want me to email similar notifications directly to the customer (with you in CC), please update the customer contact for proactive monitoring in PSEE Operational Dashboard.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - CLID Request Error",
+          "body": "Hello Team,\n\nOur proactive monitoring queries identified several Contract Workspaces with a CLID request error.\nThe list of the affected CWs is in the attached Excel file.\n\nHow to review the affected CW: Search > Contract Workspace (Procurement) > search by CW ID\n\nUsual CLID request error types:\n\nReceivedContractStatusUpdateRequestFailure\nReceivedContractStatusUpdateRequestFailure error indicates that the CSUR was successfully processed without any issue, but 500 (failure) response is returned by ERP meaning the corresponding Contract document was NOT created on ERP side. Reviewing the details (in History), we can see the error is caused by Master data, which means that fix requires client engagement.\n\nSendContractRequestFailureWithContractID\nLink: https://support.ariba.com/item/view/KB0409688\n\nProcessContractStatusUpdateRequestInternalError\nLink: https://support.ariba.com/item/view/KB0402285\nMissing Document Type attribute when sending a CLID to an external system\n\nThis issue is caused by ERP Errors received from your ERP system. You should be able to resolve the issue by adjusting the content of the affected CW with the corresponding object in your ERP.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - CLID Request Error",
+          "body": "Hello {{firstName}},\n\nOur proactive monitoring queries identified several Contract Workspaces with a CLID request error.\nThe list of the affected CWs is in the attached Excel file.\n\nHow to review the affected CW: Search > Contract Workspace (Procurement) > search by CW ID\n\nUsual CLID request error types:\n\nReceivedContractStatusUpdateRequestFailure\nReceivedContractStatusUpdateRequestFailure error indicates that the CSUR was successfully processed without any issue, but 500 (failure) response is returned by ERP meaning the corresponding Contract document was NOT created on ERP side. Reviewing the details (in History), we can see the error is caused by Master data, which means that fix requires client engagement.\n\nSendContractRequestFailureWithContractID\nLink: https://support.ariba.com/item/view/KB0409688\n\nProcessContractStatusUpdateRequestInternalError\nLink: https://support.ariba.com/item/view/KB0402285\nMissing Document Type attribute when sending a CLID to an external system\n\nThis issue is caused by ERP Errors received from the customer's ERP system. To resolve the issue, we need to notify the customer to check and make necessary corrections. Please notify the customer about the issue. In general, the customer should be able to resolve the issue by adjusting the content of the affected CW with the corresponding object in their ERP.\n\nIf you want me to email similar notifications directly to the customer (with you in CC), please update the customer contact for proactive monitoring in PSEE Operational Dashboard.\n\n{{itsmRef}}"
+        }
+      }
+    },
+    
+    "PAY_Sending": {
+      "displayName": "PAY Sending",
+      "description": "Payments stuck in Sending status",
+      "statusColor": "warning",
+      "idField": "UniqueName",
+      "typeLabel": "PAY",
+      "hasQuery": false,
+      
+      "queryTemplate": "",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Payments in status Sending",
+          "body": "Hello Team,\n\nOur proactive monitoring queries identified multiple Payments in status Sending. The status is caused by ERP errors & AN errors hence the troubleshooting should be on one-by-one basis.\n\nThe list of affected payments is in the attached Excel file.\n\nIf you need additional assistance from our side, please submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Payments in status Sending",
+          "body": "Hello {{firstName}},\n\nOur proactive monitoring queries identified multiple Payments in status Sending. The status is caused by ERP errors & AN errors hence the troubleshooting should be on one-by-one basis.\n\nThe list of affected payments is in the attached Excel file.\n\nPlease forward the list to the customer.\nIf they need additional assistance from our side, please have them submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Payments in status Sending",
+          "body": "Hello Team,\n\nOur proactive monitoring queries identified multiple Payments in status Sending. The status is caused by ERP errors & AN errors hence the troubleshooting should be on one-by-one basis.\n\nThe list of affected payments is in the attached Excel file.\n\nIf you need additional assistance from our side, please submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Payments in status Sending",
+          "body": "Hello {{firstName}},\n\nOur proactive monitoring queries identified multiple Payments in status Sending. The status is caused by ERP errors & AN errors hence the troubleshooting should be on one-by-one basis.\n\nThe list of affected payments is in the attached Excel file.\n\nPlease forward the list to the customer.\nIf they need additional assistance from our side, please have them submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        }
+      }
+    },
+    
+    "CR_Sourcing_Confirming": {
+      "displayName": "CR Sourcing Confirming",
+      "description": "Contract Requests stuck in Sourcing Confirming status",
+      "statusColor": "warning",
+      "idField": "UniqueName",
+      "typeLabel": "CR",
+      "hasQuery": true,
+      
+      "queryTemplate": "SELECT\nUniqueName,\nStatusString,\nTimeCreated,\nTimeUpdated,\n\"Active\" \"Active\",\nthis\nFROM ContractRequest INCLUDE INACTIVE\nWHERE UniqueName IN ({{uniqueNamesList}})\nORDER BY TimeCreated",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - CR in status Sourcing Confirming",
+          "body": "Hello Team,\n\nOur proactive monitoring has identified that several CRs are currently stuck in status Sourcing Confirming. The list of the affected CRs is in the attached excel file. \n\nThis issue can occur for various reasons and may require further investigation, including the potential use of the Repair Integration tool.\n\nPlease open a new support case with us referencing this contract request ID and its current status. \nOur team will be happy to assist you in resolving the matter promptly.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - CR in status Sourcing Confirming",
+          "body": "Hello {{firstName}},\n\nOur proactive monitoring has identified that several CRs are currently stuck in status Sourcing Confirming. The list of the affected CRs is in the attached excel file. \n\nThis issue can occur for various reasons and may require further investigation, including the potential use of the Repair Integration tool.\n\nPlease notify the customer about the occurrence. They are advised to open a new support case with us referencing this contract request ID and its current status. \nOur team will be happy to assist them in resolving the matter promptly.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - CR in status Sourcing Confirming",
+          "body": "Hello Team,\n\nOur proactive monitoring has identified that contract request {{uniqueName}} is currently stuck in status Sourcing Confirming.\n\nThis issue can occur for various reasons and may require further investigation, including the potential use of the Repair Integration tool.\n\nPlease open a new support case with us referencing this contract request ID and its current status. \nOur team will be happy to assist you in resolving the matter promptly.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - CR in status Sourcing Confirming",
+          "body": "Hello {{firstName}},\n\nOur proactive monitoring has identified that contract request {{uniqueName}} is currently stuck in status Sourcing Confirming.\n\nThis issue can occur for various reasons and may require further investigation, including the potential use of the Repair Integration tool.\n\nPlease notify the customer about the occurrence. They are advised to open a new support case with us referencing this contract request ID and its current status. \nOur team will be happy to assist them in resolving the matter promptly.\n\n{{itsmRef}}"
+        }
+      }
+    },
+    
+    "Stuck_Process_Flow_Projects": {
+      "displayName": "Stuck Process Flow Projects",
+      "description": "SM Process Flow Projects stuck in In Process status",
+      "statusColor": "warning",
+      "idField": "InternalId",
+      "typeLabel": "PFP",
+      "hasQuery": true,
+      
+      "queryTemplate": "SELECT DISTINCT\nInternalId AS \"Id\",\nInternalId,\nTitle,\nProcessFlowStatus,\nProjectAddin.Plan.EndDateTime AS \"Plan End Date\",\nProjectAddin.Plan.Status AS \"Plan Status\"\nFROM ariba.sourcing.content.SMProcessFlowProject\nWHERE ProcessFlowStatus NOT IN ('ConditionallyApproved','PendingDecision','Approved','Denied','Cancelled')\nAND InternalId IN ({{uniqueNamesList}})\nORDER BY InternalId",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - SM Process Projects in status In Process",
+          "body": "Hello Team,\n\nOur proactive monitoring queries identified several SM Process Projects in status In Process. You can find the affected Projects in the attached excel file.\nAll associated questionnaires and tasks are in a compliant state, hence the above WS status seems not to be compliant.\n\nIf you need additional assistance, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - SM Process Projects in status In Process",
+          "body": "Hello {{firstName}},\n\nOur proactive monitoring queries identified several SM Process Projects in status In Process. You can find the affected Projects in the attached excel file.\nAll associated questionnaires and tasks are in a compliant state, hence the above WS status seems not to be compliant.\n\nPlease notify the customer about this occurrence.\nIf they need additional assistance, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - SM Process Projects in status In Process",
+          "body": "Hello Team,\n\nOur proactive monitoring queries identified SM Process Project {{uniqueName}} in status In Process.\nAll associated questionnaires and tasks are in a compliant state, hence the above WS status seems not to be compliant.\n\nIf you need additional assistance, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - SM Process Projects in status In Process",
+          "body": "Hello {{firstName}},\n\nOur proactive monitoring queries identified SM Process Project {{uniqueName}} in status In Process.\nAll associated questionnaires and tasks are in a compliant state, hence the above WS status seems not to be compliant.\n\nPlease notify the customer about this occurrence.\nIf they need additional assistance, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        }
+      }
+    },
+    
+    "Req_Approved_No_PO": {
+      "displayName": "Req Approved No PO",
+      "description": "Requisitions in Approved status without PO",
+      "statusColor": "warning",
+      "idField": "UniqueName",
+      "typeLabel": "PR",
+      "hasQuery": false,
+      
+      "queryTemplate": "",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Requisition in status Approved with no PO",
+          "body": "Hello Team,\n\nour proactive monitoring queries identified several PRs in status Approved.\n\nYou can find the list of the PRs in the attached Excel file.\n\n<Insert your investigation of the issue here>\n\nIf you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Requisition in status Approved with no PO",
+          "body": "Hello {{firstName}},\n\nour proactive monitoring queries identified several PRs in status Approved.\n\nYou can find the list of the PRs in the attached Excel file.\n\n<Insert your investigation of the issue here>\n\nPlease notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Requisition in status Approved with no PO",
+          "body": "Hello Team,\n\nour proactive monitoring queries identified {{uniqueName}} in status Approved.\n\n<Insert your investigation of the issue here>\n\nIf you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Requisition in status Approved with no PO",
+          "body": "Hello {{firstName}},\n\nour proactive monitoring queries identified {{uniqueName}} in status Approved.\n\n<Insert your investigation of the issue here>\n\nPlease notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        }
+      }
+    },
+    
+    "Appr_Sbmtd_No_ActAppr": {
+      "displayName": "Appr Sbmtd No ActAppr",
+      "description": "Approvables in Submitted status with no active approvers",
+      "statusColor": "warning",
+      "idField": "UniqueName",
+      "typeLabel": "APPR",
+      "hasQuery": false,
+      
+      "queryTemplate": "",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Approvable object in status Submitted with no active",
+          "body": "Hello Team,\n\nour proactive monitoring queries identified several Approvable Objects in status Submitted without any active approvers in the Approval Flow.\n\nYou can find the list of the Approvables in the attached Excel file.\n\n<Insert your investigation of the issue here>\n\nIf you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Approvable object in status Submitted with no active",
+          "body": "Hello {{firstName}},\n\nour proactive monitoring queries identified several Approvable Objects in status Submitted without any active approvers in the Approval Flow.\n\nYou can find the list of the Approvables in the attached Excel file.\n\n<Insert your investigation of the issue here>\n\nPlease notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Approvable object in status Submitted with no active",
+          "body": "Hello Team,\n\nour proactive monitoring queries identified {{uniqueName}} in status Submitted without any active approvers in the Approval Flow.\n\n<Insert your investigation of the issue here>\n\nIf you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Approvable object in status Submitted with no active",
+          "body": "Hello {{firstName}},\n\nour proactive monitoring queries identified {{uniqueName}} in status Submitted without any active approvers in the Approval Flow.\n\n<Insert your investigation of the issue here>\n\nPlease notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        }
+      }
+    },
+    
+    "OK2Pay_Empty_Export": {
+      "displayName": "OK2Pay Empty Export",
+      "description": "OK2Pay exports with 0 records",
+      "statusColor": "warning",
+      "idField": "UniqueName",
+      "typeLabel": "OK2P",
+      "hasQuery": true,
+      
+      "queryTemplate": "SELECT UniqueName AS \"Id\",\nUniqueName,\nStartRunDate,\nEndRunDate,\nAdapterName,\nCurrentTime() AS \"QueryDate\"\nFROM ariba.integration.core.IntegrationEventLog\nWHERE AdapterName LIKE '%PaymentExport_CSV'\nAND RecordsExported = 0\nAND (\n  (CurrentTime() - StartRunDate) <= 1 OR\n  (CurrentTime() - EndRunDate) <= 1\n)\nOrder by 3 desc",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - OK2Pay Empty Export",
+          "body": "Hello Team,\n\nour proactive monitoring queries identified several OK2Pay exports with 0 records exported.\n\nYou can find the list of the affected exports in the attached Excel file.\n\n<Insert your investigation of the issue here>\n\nIf you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - OK2Pay Empty Export",
+          "body": "Hello {{firstName}},\n\nour proactive monitoring queries identified several OK2Pay exports with 0 records exported.\n\nYou can find the list of the affected exports in the attached Excel file.\n\n<Insert your investigation of the issue here>\n\nPlease notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - OK2Pay Empty Export",
+          "body": "Hello Team,\n\nour proactive monitoring queries identified OK2Pay export {{uniqueName}} with 0 records exported.\n\n<Insert your investigation of the issue here>\n\nIf you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - OK2Pay Empty Export",
+          "body": "Hello {{firstName}},\n\nour proactive monitoring queries identified OK2Pay export {{uniqueName}} with 0 records exported.\n\n<Insert your investigation of the issue here>\n\nPlease notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        }
+      }
+    },
+    
+    "Ext_Tax_Failure": {
+      "displayName": "Ext Tax Failure",
+      "description": "IRs in Awaiting Tax Engine Confirmation status",
+      "statusColor": "warning",
+      "idField": "UniqueName",
+      "typeLabel": "IR",
+      "hasQuery": true,
+      
+      "queryTemplate": "SELECT\nUniqueName,\nStatusString,\nTimeCreated,\nTimeUpdated,\nthis\nFROM InvoiceReconciliation\nWHERE UniqueName IN ({{uniqueNamesList}})\nORDER BY TimeCreated",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - External Tax Engine Failure",
+          "body": "Hello Team,\n\nOur proactive monitoring queries identified several IRs in status Awaiting Tax Engine Confirmation.\n\nThe list of affected IRs is in the attached Excel file.\n\nBased on the documentation https://support.ariba.com/item/view/KB0406386, we see this status is if an error occurs in the response from the tax calculation engine. The IR status remains Awaiting Tax Engine Confirmation until the tax calculation response is received successfully. IR in this status continues to be sent to the third-party tax system every day.\n\nThe identified occurrences require end user attention on one-by-one basis.\n\nIf you need additional assistance with the above occurrences, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - External Tax Engine Failure",
+          "body": "Hello {{firstName}},\n\nOur proactive monitoring queries identified several IRs in status Awaiting Tax Engine Confirmation.\n\nThe list of affected IRs is in the attached Excel file.\n\nBased on the documentation https://support.ariba.com/item/view/KB0406386, we see this status is if an error occurs in the response from the tax calculation engine. The IR status remains Awaiting Tax Engine Confirmation until the tax calculation response is received successfully. IR in this status continues to be sent to the third-party tax system every day.\n\nThe identified occurrences require end user attention on one-by-one basis.\n\nPlease notify the customer about the occurrence. If they need additional assistance with the above occurrences, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - External Tax Engine Failure",
+          "body": "Hello Team,\n\nOur proactive monitoring queries identified IR {{uniqueName}} in status Awaiting Tax Engine Confirmation.\n\nBased on the documentation https://support.ariba.com/item/view/KB0406386, we see this status is if an error occurs in the response from the tax calculation engine. The IR status remains Awaiting Tax Engine Confirmation until the tax calculation response is received successfully. IR in this status continues to be sent to the third-party tax system every day.\n\nThe identified occurrence requires end user attention.\n\nIf you need additional assistance with the above occurrence, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - External Tax Engine Failure",
+          "body": "Hello {{firstName}},\n\nOur proactive monitoring queries identified IR {{uniqueName}} in status Awaiting Tax Engine Confirmation.\n\nBased on the documentation https://support.ariba.com/item/view/KB0406386, we see this status is if an error occurs in the response from the tax calculation engine. The IR status remains Awaiting Tax Engine Confirmation until the tax calculation response is received successfully. IR in this status continues to be sent to the third-party tax system every day.\n\nThe identified occurrence requires end user attention.\n\nPlease notify the customer about the occurrence. If they need additional assistance with the above occurrence, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        }
+      }
+    },
+    
+    "INV_Approved": {
+      "displayName": "INV Approved",
+      "description": "Invoices stuck in Approved status",
+      "statusColor": "warning",
+      "idField": "UniqueName",
+      "typeLabel": "INV",
+      "hasQuery": false,
+      
+      "queryTemplate": "",
+      
+      "emailTemplates": {
+        "toCustomer": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Invoice in status Approved",
+          "body": "Hello Team,\n\nour proactive monitoring queries found several invoices in status Approved.\n\nThe list of affected INVs is in the attached Excel file.\n\nInsert your investigation !!!!!!!!!!!!!!!\n\nThe invoice requires additional technical investigation beyond the scope of proactive monitoring.\n\nIf you need additional assistance with the above, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPS": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Invoice in status Approved",
+          "body": "Hello {{firstName}},\n\nour proactive monitoring queries found several invoices in status Approved.\n\nThe list of affected INVs is in the attached Excel file.\n\nInsert your investigation !!!!!!!!!!!!!!!\n\nThe invoice requires additional technical investigation beyond the scope of proactive monitoring.\n\nPlease notify the customer about the occurrence. If they need additional assistance with the above, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toCustomerSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Invoice in status Approved",
+          "body": "Hello Team,\n\nour proactive monitoring queries found one invoice in status Approved: {{uniqueName}}\n\nInsert your investigation !!!!!!!!!!!!!!!\n\nThe invoice requires additional technical investigation beyond the scope of proactive monitoring.\n\nIf you need additional assistance with the above, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        },
+        "toPSSingle": {
+          "subject": "{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - Invoice in status Approved",
+          "body": "Hello {{firstName}},\n\nour proactive monitoring queries found one invoice in status Approved: {{uniqueName}}\n\nInsert your investigation !!!!!!!!!!!!!!!\n\nThe invoice requires additional technical investigation beyond the scope of proactive monitoring.\n\nPlease notify the customer about the occurrence. If they need additional assistance with the above, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}"
+        }
+      }
+    }
+  }
+}
