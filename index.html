@@ -729,7 +729,7 @@
             </div>
             
             <div class="upload-zone" id="uploadZone">
-                <input type="file" id="fileInput" accept=".xlsx,.xls">
+                <input type="file" id="fileInput" accept=".xlsx,.xls" multiple>
                 <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                     <polyline points="14 2 14 8 20 8"/>
@@ -737,7 +737,8 @@
                     <polyline points="9 15 12 12 15 15"/>
                 </svg>
                 <p class="upload-text">Click to upload or drag and drop</p>
-                <p class="upload-hint">Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, OK2Pay_Empty_Export, Ext_Tax_Failure, and INV_Approved Excel files</p>
+                <p class="upload-hint">Supports multiple files of the same type. Drag multiple Excel files to combine them.</p>
+                <p class="upload-hint" style="margin-top: 0.25rem; font-size: 0.75rem;">Supported types: PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, OK2Pay_Empty_Export, Ext_Tax_Failure, INV_Approved</p>
             </div>
         </div>
 
@@ -857,8 +858,8 @@
                     <polyline points="9 15 12 12 15 15"/>
                 </svg>
             </div>
-            <h2 class="empty-title">Upload Monitoring File</h2>
-            <p class="empty-text">Drag and drop an Excel file or click to browse.<br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, OK2Pay_Empty_Export, Ext_Tax_Failure, and INV_Approved reports.</p>
+            <h2 class="empty-title">Upload Monitoring Files</h2>
+            <p class="empty-text">Drag and drop Excel files or click to browse.<br><strong>Select multiple files of the same type to combine them.</strong><br>Supports PO_Ordering, RC_Processing, CLID_Request_Error, PAY_Sending, CR_Sourcing_Confirming, Stuck_Process_Flow_Projects, Req_Approved_No_PO, Appr_Sbmtd_No_ActAppr, OK2Pay_Empty_Export, Ext_Tax_Failure, and INV_Approved reports.</p>
         </div>
     </main>
 
@@ -883,6 +884,7 @@
         let currentRealm = '';
         let currentRecordCount = 0;
         let currentUniqueNames = [];
+        let currentFileCount = 1;
 
         // File upload handling
         const uploadZone = document.getElementById('uploadZone');
@@ -902,90 +904,145 @@
         uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadZone.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file) processFile(file);
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length > 0) processFiles(files);
         });
 
         fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) processFile(file);
+            const files = Array.from(e.target.files);
+            if (files.length > 0) processFiles(files);
         });
 
-        // Process Excel file
-        function processFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    // Detect monitoring type
-                    const sheetNames = workbook.SheetNames;
-                    let monitoringType = null;
-                    let infoData = null;
-                    let mainData = null;
+        // Known monitoring types
+        const KNOWN_MONITORING_TYPES = [
+            'PO_Ordering', 'RC_Processing', 'CLID_Request_Error', 'PAY_Sending',
+            'CR_Sourcing_Confirming', 'Stuck_Process_Flow_Projects', 'Req_Approved_No_PO',
+            'Appr_Sbmtd_No_ActAppr', 'OK2Pay_Empty_Export', 'Ext_Tax_Failure', 'INV_Approved'
+        ];
 
-                    if (sheetNames.includes('Info')) {
-                        infoData = XLSX.utils.sheet_to_json(workbook.Sheets['Info'], { header: 1 });
-                    }
+        // Parse a single file and return its data
+        function parseExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        const sheetNames = workbook.SheetNames;
+                        let monitoringType = null;
+                        let infoData = null;
+                        let mainData = null;
 
-                    if (sheetNames.includes('PO_Ordering')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['PO_Ordering']);
-                        monitoringType = 'PO_Ordering';
-                    } else if (sheetNames.includes('RC_Processing')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['RC_Processing']);
-                        monitoringType = 'RC_Processing';
-                    } else if (sheetNames.includes('CLID_Request_Error')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['CLID_Request_Error']);
-                        monitoringType = 'CLID_Request_Error';
-                    } else if (sheetNames.includes('PAY_Sending')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['PAY_Sending']);
-                        monitoringType = 'PAY_Sending';
-                    } else if (sheetNames.includes('CR_Sourcing_Confirming')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['CR_Sourcing_Confirming']);
-                        monitoringType = 'CR_Sourcing_Confirming';
-                    } else if (sheetNames.includes('Stuck_Process_Flow_Projects')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['Stuck_Process_Flow_Projects']);
-                        monitoringType = 'Stuck_Process_Flow_Projects';
-                    } else if (sheetNames.includes('Req_Approved_No_PO')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['Req_Approved_No_PO']);
-                        monitoringType = 'Req_Approved_No_PO';
-                    } else if (sheetNames.includes('Appr_Sbmtd_No_ActAppr')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['Appr_Sbmtd_No_ActAppr']);
-                        monitoringType = 'Appr_Sbmtd_No_ActAppr';
-                    } else if (sheetNames.includes('OK2Pay_Empty_Export')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['OK2Pay_Empty_Export']);
-                        monitoringType = 'OK2Pay_Empty_Export';
-                    } else if (sheetNames.includes('Ext_Tax_Failure')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['Ext_Tax_Failure']);
-                        monitoringType = 'Ext_Tax_Failure';
-                    } else if (sheetNames.includes('INV_Approved')) {
-                        mainData = XLSX.utils.sheet_to_json(workbook.Sheets['INV_Approved']);
-                        monitoringType = 'INV_Approved';
-                    } else {
-                        // Find first non-Info sheet
-                        for (const sheet of sheetNames) {
-                            if (sheet !== 'Info') {
-                                mainData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet]);
-                                monitoringType = sheet;
+                        // Extract Info sheet if available
+                        if (sheetNames.includes('Info')) {
+                            infoData = XLSX.utils.sheet_to_json(workbook.Sheets['Info'], { header: 1 });
+                        }
+
+                        // Detect monitoring type
+                        for (const type of KNOWN_MONITORING_TYPES) {
+                            if (sheetNames.includes(type)) {
+                                mainData = XLSX.utils.sheet_to_json(workbook.Sheets[type]);
+                                monitoringType = type;
                                 break;
                             }
                         }
+
+                        // Fallback: find first non-Info sheet
+                        if (!monitoringType) {
+                            for (const sheet of sheetNames) {
+                                if (sheet !== 'Info') {
+                                    mainData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet]);
+                                    monitoringType = sheet;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!monitoringType || !mainData) {
+                            reject(new Error(`Could not detect monitoring type in file: ${file.name}`));
+                            return;
+                        }
+
+                        resolve({
+                            fileName: file.name,
+                            monitoringType,
+                            infoData,
+                            mainData
+                        });
+
+                    } catch (error) {
+                        reject(new Error(`Error parsing ${file.name}: ${error.message}`));
                     }
+                };
+                reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+                reader.readAsArrayBuffer(file);
+            });
+        }
 
-                    if (!monitoringType || !mainData) {
-                        alert('Could not detect monitoring type. Please ensure the file contains valid data.');
-                        return;
-                    }
-
-                    currentData = mainData;
-                    displayResults(monitoringType, infoData, mainData);
-
-                } catch (error) {
-                    alert('Error processing file: ' + error.message);
+        // Process multiple Excel files
+        async function processFiles(files) {
+            try {
+                // Parse all files
+                const parsedFiles = await Promise.all(files.map(file => parseExcelFile(file)));
+                
+                if (parsedFiles.length === 0) {
+                    alert('No valid files to process.');
+                    return;
                 }
-            };
-            reader.readAsArrayBuffer(file);
+
+                // Validate all files have the same monitoring type
+                const firstType = parsedFiles[0].monitoringType;
+                const mismatchedFiles = parsedFiles.filter(f => f.monitoringType !== firstType);
+                
+                if (mismatchedFiles.length > 0) {
+                    const mismatchedNames = mismatchedFiles.map(f => `${f.fileName} (${f.monitoringType})`).join('\n');
+                    alert(`All files must be of the same monitoring type!\n\nExpected: ${firstType}\nMismatched files:\n${mismatchedNames}`);
+                    return;
+                }
+
+                // Combine data from all files
+                let combinedMainData = [];
+                let combinedInfoData = null;
+                
+                for (const parsed of parsedFiles) {
+                    // Use first file's info data as the base (usually same customer/realm)
+                    if (!combinedInfoData && parsed.infoData) {
+                        combinedInfoData = parsed.infoData;
+                    }
+                    
+                    // Combine main data
+                    combinedMainData = combinedMainData.concat(parsed.mainData);
+                }
+
+                // Remove duplicate records based on UniqueName or InternalId
+                const idField = firstType === 'Stuck_Process_Flow_Projects' ? 'InternalId' : 'UniqueName';
+                const seenIds = new Set();
+                const deduplicatedData = [];
+                
+                for (const row of combinedMainData) {
+                    const id = row[idField];
+                    if (id && !seenIds.has(id)) {
+                        seenIds.add(id);
+                        deduplicatedData.push(row);
+                    } else if (!id) {
+                        // Keep rows without the ID field
+                        deduplicatedData.push(row);
+                    }
+                }
+
+                currentData = deduplicatedData;
+                currentFileCount = parsedFiles.length;
+                displayResults(firstType, combinedInfoData, deduplicatedData);
+
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        // Legacy single file processing (kept for compatibility)
+        function processFile(file) {
+            processFiles([file]);
         }
 
         // Extract info from Info sheet
@@ -1017,30 +1074,34 @@
 
             // Status badge
             const statusBadge = document.getElementById('statusBadge');
+            const combinedBadge = currentFileCount > 1 
+                ? '<span class="fiori-status fiori-status-success" style="margin-left: 0.5rem;">Combined from ' + currentFileCount + ' files</span>' 
+                : '';
+            
             if (monitoringType === 'PO_Ordering') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-info">PO Ordering</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-info">PO Ordering</span>' + combinedBadge;
             } else if (monitoringType === 'RC_Processing') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-success">RC Processing</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-success">RC Processing</span>' + combinedBadge;
             } else if (monitoringType === 'CLID_Request_Error') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">CLID Request Error</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">CLID Request Error</span>' + combinedBadge;
             } else if (monitoringType === 'PAY_Sending') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">PAY Sending</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">PAY Sending</span>' + combinedBadge;
             } else if (monitoringType === 'CR_Sourcing_Confirming') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">CR Sourcing Confirming</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">CR Sourcing Confirming</span>' + combinedBadge;
             } else if (monitoringType === 'Stuck_Process_Flow_Projects') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Stuck Process Flow Projects</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Stuck Process Flow Projects</span>' + combinedBadge;
             } else if (monitoringType === 'Req_Approved_No_PO') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Req Approved No PO</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Req Approved No PO</span>' + combinedBadge;
             } else if (monitoringType === 'Appr_Sbmtd_No_ActAppr') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Appr Sbmtd No ActAppr</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Appr Sbmtd No ActAppr</span>' + combinedBadge;
             } else if (monitoringType === 'OK2Pay_Empty_Export') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">OK2Pay Empty Export</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">OK2Pay Empty Export</span>' + combinedBadge;
             } else if (monitoringType === 'Ext_Tax_Failure') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Ext Tax Failure</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Ext Tax Failure</span>' + combinedBadge;
             } else if (monitoringType === 'INV_Approved') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">INV Approved</span>';
+                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">INV Approved</span>' + combinedBadge;
             } else {
-                statusBadge.innerHTML = `<span class="fiori-status fiori-status-warning">${monitoringType.replace('_', ' ')}</span>`;
+                statusBadge.innerHTML = `<span class="fiori-status fiori-status-warning">${monitoringType.replace('_', ' ')}</span>` + combinedBadge;
             }
 
             // Store monitoring type, customer name, and realm for email
@@ -1126,7 +1187,9 @@
                              monitoringType === 'Ext_Tax_Failure' ? 'IR' :
                              monitoringType === 'INV_Approved' ? 'INV' :
                              monitoringType.substring(0, 3).toUpperCase();
-            metricsGrid.innerHTML = `
+            
+            // Build metrics HTML - show file count if multiple files were combined
+            let metricsHtml = `
                 <div class="fiori-numeric-tile">
                     <div class="fiori-numeric-value">${recordCount}</div>
                     <div class="fiori-numeric-label">Total Records</div>
@@ -1136,6 +1199,17 @@
                     <div class="fiori-numeric-label">Record Type</div>
                 </div>
             `;
+            
+            if (currentFileCount > 1) {
+                metricsHtml += `
+                <div class="fiori-numeric-tile" style="grid-column: span 2;">
+                    <div class="fiori-numeric-value" style="color: var(--sapPositiveColor);">${currentFileCount}</div>
+                    <div class="fiori-numeric-label">Files Combined</div>
+                </div>
+                `;
+            }
+            
+            metricsGrid.innerHTML = metricsHtml;
 
             // Query section
             const querySection = document.getElementById('querySection');
