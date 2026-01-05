@@ -683,9 +683,485 @@
         .hidden {
             display: none !important;
         }
+
+        /* ========================================
+           SETTINGS BUTTON
+           ======================================== */
+        .shell-settings-btn {
+            background: transparent;
+            border: none;
+            color: var(--sapShell_TextColor);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease;
+        }
+
+        .shell-settings-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .shell-settings-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* ========================================
+           SETTINGS MODAL
+           ======================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .modal-content {
+            background: var(--sapSurfaceColor);
+            border-radius: var(--sapTile_BorderRadius);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #E5E5E5;
+            background: #F5F6F7;
+        }
+
+        .modal-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--sapTitleColor);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            color: var(--sapContent_LabelColor);
+            border-radius: 4px;
+        }
+
+        .modal-close:hover {
+            background: #E5E5E5;
+            color: var(--sapTextColor);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #E5E5E5;
+            background: #F5F6F7;
+        }
+
+        /* Settings Tabs */
+        .settings-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #E5E5E5;
+            padding-bottom: 0.5rem;
+        }
+
+        .settings-tab {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--sapContent_LabelColor);
+            border-radius: 6px 6px 0 0;
+            transition: all 0.15s ease;
+        }
+
+        .settings-tab:hover {
+            background: #F0F1F2;
+            color: var(--sapTextColor);
+        }
+
+        .settings-tab.active {
+            background: var(--sapBrandColor);
+            color: white;
+        }
+
+        .settings-tab-content {
+            display: none;
+        }
+
+        .settings-tab-content.active {
+            display: block;
+        }
+
+        /* Type List */
+        .type-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .type-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: #F5F6F7;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .type-item:hover {
+            background: #EDEFF0;
+        }
+
+        .type-item-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .type-item-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .type-item-badge.info {
+            background: rgba(0, 112, 242, 0.12);
+            color: var(--sapInformationColor);
+        }
+
+        .type-item-badge.success {
+            background: rgba(16, 126, 62, 0.12);
+            color: var(--sapPositiveColor);
+        }
+
+        .type-item-badge.warning {
+            background: rgba(233, 115, 12, 0.12);
+            color: var(--sapCriticalColor);
+        }
+
+        .type-item-name {
+            font-weight: 500;
+            color: var(--sapTextColor);
+        }
+
+        .type-item-id {
+            font-size: 0.8125rem;
+            color: var(--sapContent_LabelColor);
+        }
+
+        .type-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .type-action-btn {
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid #E5E5E5;
+            background: white;
+            cursor: pointer;
+            font-size: 0.8125rem;
+            color: var(--sapTextColor);
+            transition: all 0.15s ease;
+        }
+
+        .type-action-btn:hover {
+            border-color: var(--sapBrandColor);
+            color: var(--sapBrandColor);
+        }
+
+        /* Config Info */
+        .config-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .config-info-item {
+            background: #F5F6F7;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .config-info-label {
+            font-size: 0.75rem;
+            color: var(--sapContent_LabelColor);
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .config-info-value {
+            font-weight: 600;
+            color: var(--sapTextColor);
+        }
+
+        /* Config Actions */
+        .config-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .config-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.625rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .config-btn-primary {
+            background: var(--sapBrandColor);
+            color: white;
+            border: none;
+        }
+
+        .config-btn-primary:hover {
+            background: var(--sapButton_Hover_Background);
+        }
+
+        .config-btn-secondary {
+            background: white;
+            color: var(--sapTextColor);
+            border: 1px solid #89919A;
+        }
+
+        .config-btn-secondary:hover {
+            border-color: var(--sapBrandColor);
+            color: var(--sapBrandColor);
+        }
+
+        .config-btn-danger {
+            background: white;
+            color: var(--sapNegativeColor);
+            border: 1px solid var(--sapNegativeColor);
+        }
+
+        .config-btn-danger:hover {
+            background: var(--sapNegativeColor);
+            color: white;
+        }
+
+        .config-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Type Editor */
+        .type-editor {
+            display: none;
+        }
+
+        .type-editor.active {
+            display: block;
+        }
+
+        .type-editor-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .type-editor-back {
+            padding: 0.5rem;
+            background: transparent;
+            border: 1px solid #E5E5E5;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .type-editor-back:hover {
+            background: #F0F1F2;
+        }
+
+        .type-editor-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--sapTitleColor);
+        }
+
+        .editor-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .editor-section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--sapTitleColor);
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #E5E5E5;
+        }
+
+        .editor-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .editor-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+
+        .editor-field.full-width {
+            grid-column: span 2;
+        }
+
+        .editor-label {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--sapTitleColor);
+        }
+
+        .editor-input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #89919A;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: var(--sapTextColor);
+        }
+
+        .editor-input:focus {
+            outline: none;
+            border-color: var(--sapBrandColor);
+            box-shadow: 0 0 0 3px rgba(0, 112, 242, 0.1);
+        }
+
+        .editor-textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: "Consolas", "Monaco", monospace;
+        }
+
+        .editor-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #89919A;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: var(--sapTextColor);
+            background: white;
+        }
+
+        .editor-checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .editor-hint {
+            font-size: 0.75rem;
+            color: var(--sapContent_LabelColor);
+            margin-top: 0.25rem;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #E5E5E5;
+            border-top-color: var(--sapBrandColor);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: var(--sapContent_LabelColor);
+        }
+
+        /* Config Status Badge */
+        .config-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .config-status-loaded {
+            background: rgba(16, 126, 62, 0.12);
+            color: var(--sapPositiveColor);
+        }
+
+        .config-status-local {
+            background: rgba(0, 112, 242, 0.12);
+            color: var(--sapInformationColor);
+        }
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading configuration...</div>
+    </div>
+
     <!-- Shell Bar -->
     <header class="fiori-shell">
         <div class="shell-logo">
@@ -693,9 +1169,249 @@
         </div>
         <span class="shell-title">POM Assistant 2.0</span>
         <div class="shell-user">
+            <button class="shell-settings-btn" onclick="openSettings()" title="Settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
             <div class="shell-avatar">PS</div>
         </div>
     </header>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Settings
+                </div>
+                <button class="modal-close" onclick="closeSettings()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Type List View -->
+                <div id="typeListView">
+                    <!-- Config Info -->
+                    <div class="config-info">
+                        <div class="config-info-item">
+                            <div class="config-info-label">Config Version</div>
+                            <div class="config-info-value" id="configVersion">-</div>
+                        </div>
+                        <div class="config-info-item">
+                            <div class="config-info-label">Last Modified</div>
+                            <div class="config-info-value" id="configLastModified">-</div>
+                        </div>
+                        <div class="config-info-item">
+                            <div class="config-info-label">Monitoring Types</div>
+                            <div class="config-info-value" id="configTypeCount">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Config Actions -->
+                    <div class="config-actions" style="margin-bottom: 1.5rem;">
+                        <button class="config-btn config-btn-secondary" onclick="exportConfig()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Export Config
+                        </button>
+                        <button class="config-btn config-btn-secondary" onclick="document.getElementById('importConfigInput').click()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Import Config
+                        </button>
+                        <input type="file" id="importConfigInput" accept=".json" style="display:none" onchange="importConfig(event)">
+                        <button class="config-btn config-btn-secondary" onclick="reloadConfigFromServer()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                            </svg>
+                            Reload from Server
+                        </button>
+                        <button class="config-btn config-btn-danger" onclick="resetToDefaults()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                            Reset to Defaults
+                        </button>
+                    </div>
+
+                    <!-- Section Title -->
+                    <div class="editor-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Monitoring Types</span>
+                        <button class="config-btn config-btn-primary" onclick="addNewType()" style="padding: 0.375rem 0.75rem; font-size: 0.8125rem;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add New
+                        </button>
+                    </div>
+
+                    <!-- Type List -->
+                    <div class="type-list" id="typeList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Type Editor View -->
+                <div id="typeEditorView" class="type-editor">
+                    <div class="type-editor-header">
+                        <button class="type-editor-back" onclick="closeTypeEditor()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                        </button>
+                        <span class="type-editor-title" id="typeEditorTitle">Edit Type</span>
+                    </div>
+
+                    <!-- Basic Settings -->
+                    <div class="editor-section">
+                        <div class="editor-section-title">Basic Settings</div>
+                        <div class="editor-grid">
+                            <div class="editor-field">
+                                <label class="editor-label">Sheet Name (ID)</label>
+                                <input type="text" class="editor-input" id="editorSheetName" placeholder="e.g., PO_Ordering">
+                                <span class="editor-hint">Must match the Excel sheet name</span>
+                            </div>
+                            <div class="editor-field">
+                                <label class="editor-label">Display Name</label>
+                                <input type="text" class="editor-input" id="editorDisplayName" placeholder="e.g., PO Ordering">
+                            </div>
+                            <div class="editor-field">
+                                <label class="editor-label">Type Label</label>
+                                <input type="text" class="editor-input" id="editorTypeLabel" placeholder="e.g., PO">
+                                <span class="editor-hint">Short label for metrics display</span>
+                            </div>
+                            <div class="editor-field">
+                                <label class="editor-label">ID Field</label>
+                                <select class="editor-select" id="editorIdField">
+                                    <option value="UniqueName">UniqueName</option>
+                                    <option value="InternalId">InternalId</option>
+                                </select>
+                            </div>
+                            <div class="editor-field">
+                                <label class="editor-label">Status Color</label>
+                                <select class="editor-select" id="editorStatusColor">
+                                    <option value="info">Info (Blue)</option>
+                                    <option value="success">Success (Green)</option>
+                                    <option value="warning">Warning (Orange)</option>
+                                </select>
+                            </div>
+                            <div class="editor-field">
+                                <label class="editor-label">Has Query</label>
+                                <div class="editor-checkbox-group">
+                                    <input type="checkbox" id="editorHasQuery">
+                                    <label for="editorHasQuery">Show AQL query section</label>
+                                </div>
+                            </div>
+                            <div class="editor-field full-width">
+                                <label class="editor-label">Description</label>
+                                <input type="text" class="editor-input" id="editorDescription" placeholder="Brief description of this monitoring type">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Query Template -->
+                    <div class="editor-section">
+                        <div class="editor-section-title">AQL Query Template</div>
+                        <div class="editor-field">
+                            <label class="editor-label">Query</label>
+                            <textarea class="editor-input editor-textarea" id="editorQueryTemplate" placeholder="SELECT ... FROM ... WHERE UniqueName IN ({{uniqueNamesList}})"></textarea>
+                            <span class="editor-hint">Use {{uniqueNamesList}} for the list of IDs</span>
+                        </div>
+                    </div>
+
+                    <!-- Email Templates -->
+                    <div class="editor-section">
+                        <div class="editor-section-title">Email to Customer (Multiple Records)</div>
+                        <div class="editor-grid">
+                            <div class="editor-field full-width">
+                                <label class="editor-label">Subject</label>
+                                <input type="text" class="editor-input" id="editorEmailCustomerSubject">
+                            </div>
+                            <div class="editor-field full-width">
+                                <label class="editor-label">Body</label>
+                                <textarea class="editor-input editor-textarea" id="editorEmailCustomerBody"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="editor-section">
+                        <div class="editor-section-title">Email to Product Specialist (Multiple Records)</div>
+                        <div class="editor-grid">
+                            <div class="editor-field full-width">
+                                <label class="editor-label">Subject</label>
+                                <input type="text" class="editor-input" id="editorEmailPSSubject">
+                            </div>
+                            <div class="editor-field full-width">
+                                <label class="editor-label">Body</label>
+                                <textarea class="editor-input editor-textarea" id="editorEmailPSBody"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="editor-section">
+                        <div class="editor-section-title">Email to Customer (Single Record)</div>
+                        <div class="editor-grid">
+                            <div class="editor-field full-width">
+                                <label class="editor-label">Subject</label>
+                                <input type="text" class="editor-input" id="editorEmailCustomerSingleSubject">
+                            </div>
+                            <div class="editor-field full-width">
+                                <label class="editor-label">Body</label>
+                                <textarea class="editor-input editor-textarea" id="editorEmailCustomerSingleBody"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="editor-section">
+                        <div class="editor-section-title">Email to Product Specialist (Single Record)</div>
+                        <div class="editor-grid">
+                            <div class="editor-field full-width">
+                                <label class="editor-label">Subject</label>
+                                <input type="text" class="editor-input" id="editorEmailPSSingleSubject">
+                            </div>
+                            <div class="editor-field full-width">
+                                <label class="editor-label">Body</label>
+                                <textarea class="editor-input editor-textarea" id="editorEmailPSSingleBody"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="editor-hint" style="margin-bottom: 1rem;">
+                        <strong>Available variables:</strong> {{customerName}}, {{realm}}, {{firstName}}, {{caseNumber}}, {{itsmRef}}, {{uniqueName}}, {{recordCount}}, {{uniqueNamesList}}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="config-btn config-btn-secondary" onclick="closeSettings()">Cancel</button>
+                <button class="config-btn config-btn-primary" id="saveTypeBtn" onclick="saveTypeChanges()" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main class="fiori-content">
@@ -869,7 +1585,18 @@
     </footer>
 
     <script>
-        // Global variables
+        // ========================================
+        // CONFIGURATION MANAGEMENT
+        // ========================================
+        
+        const CONFIG_STORAGE_KEY = 'pom_assistant_config';
+        const CONFIG_URL = 'config.json';
+        
+        let appConfig = null;
+        let editingTypeId = null;
+        let isNewType = false;
+
+        // Global variables for current session
         let currentQuery = '';
         let currentData = null;
         let currentContacts = '';
@@ -885,40 +1612,97 @@
         let currentRecordCount = 0;
         let currentUniqueNames = [];
         let currentFileCount = 1;
+        let currentFirstName = '';
 
-        // File upload handling
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
+        // Load configuration on startup
+        async function loadConfiguration() {
+            try {
+                // First check localStorage for local overrides
+                const localConfig = localStorage.getItem(CONFIG_STORAGE_KEY);
+                
+                if (localConfig) {
+                    appConfig = JSON.parse(localConfig);
+                    console.log('Loaded config from localStorage');
+                } else {
+                    // Fetch from server
+                    const response = await fetch(CONFIG_URL);
+                    if (!response.ok) throw new Error('Failed to load config.json');
+                    appConfig = await response.json();
+                    console.log('Loaded config from server');
+                }
+                
+                hideLoading();
+                initializeApp();
+                
+            } catch (error) {
+                console.error('Error loading configuration:', error);
+                alert('Failed to load configuration. Please check if config.json exists.');
+                hideLoading();
+            }
+        }
 
-        uploadZone.addEventListener('click', () => fileInput.click());
-        
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('dragover');
-        });
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
 
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('dragover');
-        });
+        function showLoading(text = 'Loading...') {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.querySelector('.loading-text').textContent = text;
+            overlay.classList.remove('hidden');
+        }
 
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            const files = Array.from(e.dataTransfer.files);
-            if (files.length > 0) processFiles(files);
-        });
+        function getKnownMonitoringTypes() {
+            return appConfig ? Object.keys(appConfig.monitoringTypes) : [];
+        }
 
-        fileInput.addEventListener('change', (e) => {
-            const files = Array.from(e.target.files);
-            if (files.length > 0) processFiles(files);
-        });
+        function getTypeConfig(typeId) {
+            return appConfig?.monitoringTypes?.[typeId] || null;
+        }
 
-        // Known monitoring types
-        const KNOWN_MONITORING_TYPES = [
-            'PO_Ordering', 'RC_Processing', 'CLID_Request_Error', 'PAY_Sending',
-            'CR_Sourcing_Confirming', 'Stuck_Process_Flow_Projects', 'Req_Approved_No_PO',
-            'Appr_Sbmtd_No_ActAppr', 'OK2Pay_Empty_Export', 'Ext_Tax_Failure', 'INV_Approved'
-        ];
+        // Initialize app after config is loaded
+        function initializeApp() {
+            // Set up file upload handlers
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadZone.addEventListener('click', () => fileInput.click());
+            
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const files = Array.from(e.dataTransfer.files);
+                if (files.length > 0) processFiles(files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length > 0) processFiles(files);
+            });
+
+            // Update supported types hint
+            updateSupportedTypesHint();
+        }
+
+        function updateSupportedTypesHint() {
+            const types = getKnownMonitoringTypes();
+            const typesList = types.join(', ');
+            const hints = document.querySelectorAll('.upload-hint');
+            if (hints.length > 1) {
+                hints[1].textContent = `Supported types: ${typesList}`;
+            }
+        }
+
+        // Start loading on page load
+        document.addEventListener('DOMContentLoaded', loadConfiguration);
 
         // Parse a single file and return its data
         function parseExcelFile(file) {
@@ -930,6 +1714,7 @@
                         const workbook = XLSX.read(data, { type: 'array' });
                         
                         const sheetNames = workbook.SheetNames;
+                        const knownTypes = getKnownMonitoringTypes();
                         let monitoringType = null;
                         let infoData = null;
                         let mainData = null;
@@ -939,8 +1724,8 @@
                             infoData = XLSX.utils.sheet_to_json(workbook.Sheets['Info'], { header: 1 });
                         }
 
-                        // Detect monitoring type
-                        for (const type of KNOWN_MONITORING_TYPES) {
+                        // Detect monitoring type from config
+                        for (const type of knownTypes) {
                             if (sheetNames.includes(type)) {
                                 mainData = XLSX.utils.sheet_to_json(workbook.Sheets[type]);
                                 monitoringType = type;
@@ -1073,8 +1858,9 @@
                     combinedMainData = combinedMainData.concat(parsed.mainData);
                 }
 
-                // Remove duplicate records based on UniqueName or InternalId
-                const idField = refType === 'Stuck_Process_Flow_Projects' ? 'InternalId' : 'UniqueName';
+                // Remove duplicate records based on the configured idField
+                const typeConfig = getTypeConfig(refType);
+                const idField = typeConfig?.idField || 'UniqueName';
                 const seenIds = new Set();
                 const deduplicatedData = [];
                 
@@ -1123,44 +1909,97 @@
             return info;
         }
 
+        // Generate query from template
+        function generateQueryFromTemplate(template, uniqueNames) {
+            if (!template) return '';
+            const namesList = uniqueNames.map(n => `'${n}'`).join(', ');
+            return template.replace(/\{\{uniqueNamesList\}\}/g, namesList);
+        }
+
+        // Generate email from config templates
+        function generateEmailFromConfig(typeConfig, toCustomer, isSingleRecord, variables) {
+            if (!typeConfig?.emailTemplates) {
+                return { subject: '', body: '' };
+            }
+
+            // Select the appropriate template
+            let templateKey;
+            if (toCustomer && isSingleRecord) {
+                templateKey = 'toCustomerSingle';
+            } else if (toCustomer && !isSingleRecord) {
+                templateKey = 'toCustomer';
+            } else if (!toCustomer && isSingleRecord) {
+                templateKey = 'toPSSingle';
+            } else {
+                templateKey = 'toPS';
+            }
+
+            const template = typeConfig.emailTemplates[templateKey] || typeConfig.emailTemplates.toCustomer;
+            if (!template) {
+                return { subject: '', body: '' };
+            }
+
+            // Replace variables in template
+            let subject = template.subject || '';
+            let body = template.body || '';
+
+            // Process all variables
+            const vars = {
+                customerName: variables.customerName || '',
+                realm: variables.realm || '',
+                firstName: variables.firstName || 'Product Specialist',
+                caseNumber: variables.caseNumber ? variables.caseNumber + ' ' : '',
+                itsmRef: variables.itsmRef || '',
+                uniqueName: variables.uniqueName || '',
+                recordCount: variables.recordCount || 0,
+                uniqueNamesList: variables.uniqueNamesList || ''
+            };
+
+            // Replace placeholders
+            for (const [key, value] of Object.entries(vars)) {
+                const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+                subject = subject.replace(regex, value);
+                body = body.replace(regex, value);
+            }
+
+            // Handle realm in subject - add ", realm X" only if realm exists
+            if (vars.realm) {
+                subject = subject.replace(/, realm \{\{realm\}\}/g, `, realm ${vars.realm}`);
+            } else {
+                subject = subject.replace(/, realm \{\{realm\}\}/g, '');
+            }
+
+            // Clean up subject - remove double spaces and trim
+            subject = subject.replace(/\s+/g, ' ').trim();
+
+            return { subject, body };
+        }
+
+        // Extract first name from email address
+        function getFirstNameFromEmail(email) {
+            if (!email) return 'Product Specialist';
+            const localPart = email.split('@')[0];
+            const firstName = localPart.split('.')[0];
+            return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+        }
+
         // Display results
         function displayResults(monitoringType, infoData, mainData) {
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('resultsContainer').classList.remove('hidden');
 
             const info = extractInfo(infoData);
+            const typeConfig = getTypeConfig(monitoringType);
 
-            // Status badge
+            // Status badge - use config
             const statusBadge = document.getElementById('statusBadge');
             const combinedBadge = currentFileCount > 1 
                 ? '<span class="fiori-status fiori-status-success" style="margin-left: 0.5rem;">Combined from ' + currentFileCount + ' files</span>' 
                 : '';
             
-            if (monitoringType === 'PO_Ordering') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-info">PO Ordering</span>' + combinedBadge;
-            } else if (monitoringType === 'RC_Processing') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-success">RC Processing</span>' + combinedBadge;
-            } else if (monitoringType === 'CLID_Request_Error') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">CLID Request Error</span>' + combinedBadge;
-            } else if (monitoringType === 'PAY_Sending') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">PAY Sending</span>' + combinedBadge;
-            } else if (monitoringType === 'CR_Sourcing_Confirming') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">CR Sourcing Confirming</span>' + combinedBadge;
-            } else if (monitoringType === 'Stuck_Process_Flow_Projects') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Stuck Process Flow Projects</span>' + combinedBadge;
-            } else if (monitoringType === 'Req_Approved_No_PO') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Req Approved No PO</span>' + combinedBadge;
-            } else if (monitoringType === 'Appr_Sbmtd_No_ActAppr') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Appr Sbmtd No ActAppr</span>' + combinedBadge;
-            } else if (monitoringType === 'OK2Pay_Empty_Export') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">OK2Pay Empty Export</span>' + combinedBadge;
-            } else if (monitoringType === 'Ext_Tax_Failure') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">Ext Tax Failure</span>' + combinedBadge;
-            } else if (monitoringType === 'INV_Approved') {
-                statusBadge.innerHTML = '<span class="fiori-status fiori-status-warning">INV Approved</span>' + combinedBadge;
-            } else {
-                statusBadge.innerHTML = `<span class="fiori-status fiori-status-warning">${monitoringType.replace('_', ' ')}</span>` + combinedBadge;
-            }
+            const displayName = typeConfig?.displayName || monitoringType.replace(/_/g, ' ');
+            const statusColor = typeConfig?.statusColor || 'warning';
+            statusBadge.innerHTML = `<span class="fiori-status fiori-status-${statusColor}">${displayName}</span>` + combinedBadge;
 
             // Store monitoring type, customer name, and realm for email
             currentMonitoringType = monitoringType;
@@ -1218,33 +2057,18 @@
                 currentContacts = '';
             }
 
-            // Get unique names (or InternalIds for Stuck_Process_Flow_Projects)
-            let uniqueNames;
-            if (monitoringType === 'Stuck_Process_Flow_Projects') {
-                uniqueNames = [...new Set(mainData.map(row => row.InternalId).filter(Boolean))];
-            } else {
-                uniqueNames = [...new Set(mainData.map(row => row.UniqueName).filter(Boolean))];
-            }
+            // Get unique names using config idField
+            const idField = typeConfig?.idField || 'UniqueName';
+            const uniqueNames = [...new Set(mainData.map(row => row[idField]).filter(Boolean))];
             const recordCount = uniqueNames.length || mainData.length;
             
             // Store for email preview updates
             currentRecordCount = recordCount;
             currentUniqueNames = uniqueNames;
 
-            // Metrics
+            // Metrics - use config typeLabel
             const metricsGrid = document.getElementById('metricsGrid');
-            const typeLabel = monitoringType === 'PO_Ordering' ? 'PO' : 
-                             monitoringType === 'RC_Processing' ? 'RC' : 
-                             monitoringType === 'CLID_Request_Error' ? 'CLID' :
-                             monitoringType === 'PAY_Sending' ? 'PAY' :
-                             monitoringType === 'CR_Sourcing_Confirming' ? 'CR' :
-                             monitoringType === 'Stuck_Process_Flow_Projects' ? 'PFP' :
-                             monitoringType === 'Req_Approved_No_PO' ? 'PR' :
-                             monitoringType === 'Appr_Sbmtd_No_ActAppr' ? 'APPR' :
-                             monitoringType === 'OK2Pay_Empty_Export' ? 'OK2P' :
-                             monitoringType === 'Ext_Tax_Failure' ? 'IR' :
-                             monitoringType === 'INV_Approved' ? 'INV' :
-                             monitoringType.substring(0, 3).toUpperCase();
+            const typeLabel = typeConfig?.typeLabel || monitoringType.substring(0, 3).toUpperCase();
             
             // Build metrics HTML - show file count if multiple files were combined
             let metricsHtml = `
@@ -1269,24 +2093,41 @@
             
             metricsGrid.innerHTML = metricsHtml;
 
-            // Query section
+            // Query section - use config hasQuery
             const querySection = document.getElementById('querySection');
             const queryCode = document.getElementById('queryCode');
             
-            if (monitoringType === 'PO_Ordering' || monitoringType === 'RC_Processing' || 
-                monitoringType === 'CR_Sourcing_Confirming' || monitoringType === 'Stuck_Process_Flow_Projects' ||
-                monitoringType === 'OK2Pay_Empty_Export' || monitoringType === 'Ext_Tax_Failure') {
+            if (typeConfig?.hasQuery && typeConfig?.queryTemplate) {
                 querySection.classList.remove('hidden');
-                currentQuery = generateQuery(monitoringType, uniqueNames, mainData);
+                currentQuery = generateQueryFromTemplate(typeConfig.queryTemplate, uniqueNames);
                 queryCode.textContent = currentQuery;
             } else {
                 querySection.classList.add('hidden');
+                currentQuery = '';
             }
 
-            // Email template section
+            // Email template section - use config templates
             const emailSubject = document.getElementById('emailSubject');
             const emailBody = document.getElementById('emailBody');
-            const emailTemplate = generateEmailTemplate(monitoringType, currentCustomerName, info.productSpecialist, hasCustomerContacts, recordCount, uniqueNames);
+            currentFirstName = getFirstNameFromEmail(info.productSpecialist);
+            const singleUniqueName = uniqueNames.length === 1 ? uniqueNames[0] : '';
+            
+            const emailTemplate = generateEmailFromConfig(
+                typeConfig,
+                hasCustomerContacts,
+                recordCount === 1,
+                {
+                    customerName: currentCustomerName,
+                    realm: currentRealm,
+                    firstName: currentFirstName,
+                    caseNumber: currentCaseNumber,
+                    itsmRef: currentItsmRef,
+                    uniqueName: singleUniqueName,
+                    recordCount: recordCount,
+                    uniqueNamesList: uniqueNames.map(n => `'${n}'`).join(', ')
+                }
+            );
+            
             currentEmailSubject = emailTemplate.subject;
             currentEmailBody = emailTemplate.body;
             emailSubject.textContent = currentEmailSubject;
@@ -1882,8 +2723,26 @@ Please notify the customer about the occurrence. If they need additional assista
             currentCaseNumber = document.getElementById('caseNumberInput').value.trim();
             currentItsmRef = document.getElementById('itsmRefInput').value.trim();
             
-            // Regenerate email template
-            const emailTemplate = generateEmailTemplate(currentMonitoringType, currentCustomerName, currentProductSpecialist, hasCustomerContacts, currentRecordCount, currentUniqueNames);
+            // Regenerate email template using config
+            const typeConfig = getTypeConfig(currentMonitoringType);
+            const singleUniqueName = currentUniqueNames.length === 1 ? currentUniqueNames[0] : '';
+            
+            const emailTemplate = generateEmailFromConfig(
+                typeConfig,
+                hasCustomerContacts,
+                currentRecordCount === 1,
+                {
+                    customerName: currentCustomerName,
+                    realm: currentRealm,
+                    firstName: currentFirstName,
+                    caseNumber: currentCaseNumber,
+                    itsmRef: currentItsmRef,
+                    uniqueName: singleUniqueName,
+                    recordCount: currentRecordCount,
+                    uniqueNamesList: currentUniqueNames.map(n => `'${n}'`).join(', ')
+                }
+            );
+            
             currentEmailSubject = emailTemplate.subject;
             currentEmailBody = emailTemplate.body;
             
@@ -2143,6 +3002,270 @@ ORDER BY ApprovedDate DESC`;
             const icon = document.getElementById('expandIcon');
             content.classList.toggle('expanded');
             icon.style.transform = content.classList.contains('expanded') ? 'rotate(180deg)' : 'rotate(0)';
+        }
+
+        // ========================================
+        // SETTINGS MODAL FUNCTIONS
+        // ========================================
+
+        function openSettings() {
+            const modal = document.getElementById('settingsModal');
+            modal.classList.remove('hidden');
+            populateSettingsModal();
+            showTypeList();
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+            editingTypeId = null;
+            isNewType = false;
+        }
+
+        function populateSettingsModal() {
+            // Update config info
+            document.getElementById('configVersion').textContent = appConfig?.version || '-';
+            document.getElementById('configLastModified').textContent = appConfig?.lastModified || '-';
+            document.getElementById('configTypeCount').textContent = Object.keys(appConfig?.monitoringTypes || {}).length;
+
+            // Populate type list
+            const typeList = document.getElementById('typeList');
+            typeList.innerHTML = '';
+
+            for (const [typeId, typeConfig] of Object.entries(appConfig?.monitoringTypes || {})) {
+                const item = document.createElement('div');
+                item.className = 'type-item';
+                item.innerHTML = `
+                    <div class="type-item-info">
+                        <span class="type-item-badge ${typeConfig.statusColor}">${typeConfig.typeLabel}</span>
+                        <span class="type-item-name">${typeConfig.displayName}</span>
+                        <span class="type-item-id">(${typeId})</span>
+                    </div>
+                    <div class="type-item-actions">
+                        <button class="type-action-btn" onclick="editType('${typeId}')">Edit</button>
+                    </div>
+                `;
+                typeList.appendChild(item);
+            }
+        }
+
+        function showTypeList() {
+            document.getElementById('typeListView').style.display = 'block';
+            document.getElementById('typeEditorView').classList.remove('active');
+            document.getElementById('saveTypeBtn').style.display = 'none';
+        }
+
+        function editType(typeId) {
+            editingTypeId = typeId;
+            isNewType = false;
+            const typeConfig = appConfig.monitoringTypes[typeId];
+
+            document.getElementById('typeEditorTitle').textContent = `Edit: ${typeConfig.displayName}`;
+            
+            // Populate form fields
+            document.getElementById('editorSheetName').value = typeId;
+            document.getElementById('editorSheetName').disabled = true; // Can't change ID of existing type
+            document.getElementById('editorDisplayName').value = typeConfig.displayName || '';
+            document.getElementById('editorDescription').value = typeConfig.description || '';
+            document.getElementById('editorTypeLabel').value = typeConfig.typeLabel || '';
+            document.getElementById('editorIdField').value = typeConfig.idField || 'UniqueName';
+            document.getElementById('editorStatusColor').value = typeConfig.statusColor || 'warning';
+            document.getElementById('editorHasQuery').checked = typeConfig.hasQuery || false;
+            document.getElementById('editorQueryTemplate').value = typeConfig.queryTemplate || '';
+
+            // Email templates
+            const templates = typeConfig.emailTemplates || {};
+            document.getElementById('editorEmailCustomerSubject').value = templates.toCustomer?.subject || '';
+            document.getElementById('editorEmailCustomerBody').value = templates.toCustomer?.body || '';
+            document.getElementById('editorEmailPSSubject').value = templates.toPS?.subject || '';
+            document.getElementById('editorEmailPSBody').value = templates.toPS?.body || '';
+            document.getElementById('editorEmailCustomerSingleSubject').value = templates.toCustomerSingle?.subject || '';
+            document.getElementById('editorEmailCustomerSingleBody').value = templates.toCustomerSingle?.body || '';
+            document.getElementById('editorEmailPSSingleSubject').value = templates.toPSSingle?.subject || '';
+            document.getElementById('editorEmailPSSingleBody').value = templates.toPSSingle?.body || '';
+
+            // Show editor
+            document.getElementById('typeListView').style.display = 'none';
+            document.getElementById('typeEditorView').classList.add('active');
+            document.getElementById('saveTypeBtn').style.display = 'inline-flex';
+        }
+
+        function closeTypeEditor() {
+            showTypeList();
+            editingTypeId = null;
+            isNewType = false;
+        }
+
+        function saveTypeChanges() {
+            const typeId = document.getElementById('editorSheetName').value.trim();
+            
+            if (!typeId) {
+                alert('Sheet Name is required');
+                return;
+            }
+
+            const updatedType = {
+                displayName: document.getElementById('editorDisplayName').value.trim(),
+                description: document.getElementById('editorDescription').value.trim(),
+                typeLabel: document.getElementById('editorTypeLabel').value.trim(),
+                idField: document.getElementById('editorIdField').value,
+                statusColor: document.getElementById('editorStatusColor').value,
+                hasQuery: document.getElementById('editorHasQuery').checked,
+                queryTemplate: document.getElementById('editorQueryTemplate').value,
+                emailTemplates: {
+                    toCustomer: {
+                        subject: document.getElementById('editorEmailCustomerSubject').value,
+                        body: document.getElementById('editorEmailCustomerBody').value
+                    },
+                    toPS: {
+                        subject: document.getElementById('editorEmailPSSubject').value,
+                        body: document.getElementById('editorEmailPSBody').value
+                    },
+                    toCustomerSingle: {
+                        subject: document.getElementById('editorEmailCustomerSingleSubject').value,
+                        body: document.getElementById('editorEmailCustomerSingleBody').value
+                    },
+                    toPSSingle: {
+                        subject: document.getElementById('editorEmailPSSingleSubject').value,
+                        body: document.getElementById('editorEmailPSSingleBody').value
+                    }
+                }
+            };
+
+            // Update config
+            appConfig.monitoringTypes[typeId] = updatedType;
+            appConfig.lastModified = new Date().toISOString().split('T')[0];
+
+            // Save to localStorage
+            saveConfigToLocalStorage();
+
+            // Update UI
+            populateSettingsModal();
+            showTypeList();
+            updateSupportedTypesHint();
+
+            alert('Changes saved successfully!');
+        }
+
+        function saveConfigToLocalStorage() {
+            localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(appConfig));
+            console.log('Config saved to localStorage');
+        }
+
+        function exportConfig() {
+            const dataStr = JSON.stringify(appConfig, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pom-assistant-config-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importConfig(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedConfig = JSON.parse(e.target.result);
+                    
+                    // Validate structure
+                    if (!importedConfig.monitoringTypes) {
+                        throw new Error('Invalid config: missing monitoringTypes');
+                    }
+
+                    const typeCount = Object.keys(importedConfig.monitoringTypes).length;
+                    if (!confirm(`Import ${typeCount} monitoring types from this config?\n\nThis will replace your current configuration.`)) {
+                        return;
+                    }
+
+                    appConfig = importedConfig;
+                    saveConfigToLocalStorage();
+                    populateSettingsModal();
+                    updateSupportedTypesHint();
+                    
+                    alert('Configuration imported successfully!');
+                } catch (error) {
+                    alert('Error importing config: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset input
+            event.target.value = '';
+        }
+
+        async function reloadConfigFromServer() {
+            if (!confirm('Reload configuration from server?\n\nThis will discard any local changes.')) {
+                return;
+            }
+
+            try {
+                showLoading('Reloading configuration...');
+                
+                const response = await fetch(CONFIG_URL + '?t=' + Date.now()); // Cache bust
+                if (!response.ok) throw new Error('Failed to load config.json');
+                
+                appConfig = await response.json();
+                localStorage.removeItem(CONFIG_STORAGE_KEY); // Clear local overrides
+                
+                hideLoading();
+                populateSettingsModal();
+                updateSupportedTypesHint();
+                
+                alert('Configuration reloaded from server!');
+            } catch (error) {
+                hideLoading();
+                alert('Error reloading config: ' + error.message);
+            }
+        }
+
+        function resetToDefaults() {
+            if (!confirm('Reset to default configuration?\n\nThis will remove all local changes and reload from server.')) {
+                return;
+            }
+
+            localStorage.removeItem(CONFIG_STORAGE_KEY);
+            location.reload();
+        }
+
+        // Add new monitoring type
+        function addNewType() {
+            editingTypeId = null;
+            isNewType = true;
+
+            document.getElementById('typeEditorTitle').textContent = 'Add New Monitoring Type';
+            
+            // Clear form fields
+            document.getElementById('editorSheetName').value = '';
+            document.getElementById('editorSheetName').disabled = false;
+            document.getElementById('editorDisplayName').value = '';
+            document.getElementById('editorDescription').value = '';
+            document.getElementById('editorTypeLabel').value = '';
+            document.getElementById('editorIdField').value = 'UniqueName';
+            document.getElementById('editorStatusColor').value = 'warning';
+            document.getElementById('editorHasQuery').checked = false;
+            document.getElementById('editorQueryTemplate').value = '';
+
+            // Clear email templates
+            document.getElementById('editorEmailCustomerSubject').value = '{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - ';
+            document.getElementById('editorEmailCustomerBody').value = 'Hello Team,\n\n\n\nIf you need additional assistance, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}';
+            document.getElementById('editorEmailPSSubject').value = '{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - ';
+            document.getElementById('editorEmailPSBody').value = 'Hello {{firstName}},\n\n\n\nPlease notify the customer about the occurrence. If they need additional assistance, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}';
+            document.getElementById('editorEmailCustomerSingleSubject').value = '{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - ';
+            document.getElementById('editorEmailCustomerSingleBody').value = 'Hello Team,\n\n\n\nIf you need additional assistance, you are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}';
+            document.getElementById('editorEmailPSSingleSubject').value = '{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - ';
+            document.getElementById('editorEmailPSSingleBody').value = 'Hello {{firstName}},\n\n\n\nPlease notify the customer about the occurrence. If they need additional assistance, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}';
+
+            // Show editor
+            document.getElementById('typeListView').style.display = 'none';
+            document.getElementById('typeEditorView').classList.add('active');
+            document.getElementById('saveTypeBtn').style.display = 'inline-flex';
         }
     </script>
 </body>
