@@ -1551,13 +1551,13 @@
                     <pre class="code-body" id="emailBody"></pre>
                 </div>
                 
-                <!-- Open in Outlook Button -->
-                <button class="outlook-btn" id="openOutlookBtn" onclick="openInOutlook()">
+                <!-- Open in Outlook Button with Attachment -->
+                <button class="outlook-btn" id="openOutlookBtn" onclick="openInOutlook()" title="Opens email draft in Outlook with Excel attachment included">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                         <polyline points="22,6 12,13 2,6"/>
                     </svg>
-                    Open in Outlook
+                    Open in Outlook (with Excel)
                 </button>
             </div>
 
@@ -2939,7 +2939,124 @@ ORDER BY ApprovedDate DESC`;
             });
         }
 
-        // Open email in Outlook (mailto)
+        // Generate Excel file from current data and return as base64
+        function generateExcelBase64() {
+            if (!currentData || currentData.length === 0) {
+                return null;
+            }
+
+            // Create a new workbook
+            const wb = XLSX.utils.book_new();
+            
+            // Create worksheet from current data
+            const ws = XLSX.utils.json_to_sheet(currentData);
+            
+            // Add worksheet with monitoring type name as sheet name
+            const sheetName = currentMonitoringType || 'Data';
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            
+            // Write workbook to binary string and convert to base64
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+            
+            return wbout;
+        }
+
+        // Generate filename for the Excel attachment
+        function generateExcelFilename() {
+            const sanitizedCustomer = (currentCustomerName || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+            const sanitizedRealm = (currentRealm || 'Realm').replace(/[^a-zA-Z0-9]/g, '_');
+            const type = currentMonitoringType || 'Data';
+            const date = new Date().toISOString().split('T')[0];
+            return `${type}_${sanitizedCustomer}_${sanitizedRealm}_${date}.xlsx`;
+        }
+
+        // Generate EML file content with Excel attachment
+        function generateEmlWithAttachment(to, cc, subject, body, excelBase64, filename) {
+            const boundary = 'PAM_Assistant_Boundary_' + Date.now();
+            
+            // Format email addresses (remove spaces after commas for proper EML format)
+            const formatEmails = (emails) => emails.split(',').map(e => e.trim()).filter(e => e).join(', ');
+            const toFormatted = formatEmails(to);
+            const ccFormatted = formatEmails(cc);
+            
+            let eml = '';
+            eml += 'MIME-Version: 1.0\r\n';
+            eml += `To: ${toFormatted}\r\n`;
+            if (ccFormatted) {
+                eml += `Cc: ${ccFormatted}\r\n`;
+            }
+            eml += `Subject: ${subject}\r\n`;
+            eml += `Content-Type: multipart/mixed; boundary="${boundary}"\r\n`;
+            eml += '\r\n';
+            
+            // Email body part
+            eml += `--${boundary}\r\n`;
+            eml += 'Content-Type: text/plain; charset=utf-8\r\n';
+            eml += 'Content-Transfer-Encoding: quoted-printable\r\n';
+            eml += '\r\n';
+            // Convert body to quoted-printable (handle line breaks properly)
+            eml += body.replace(/\r?\n/g, '\r\n');
+            eml += '\r\n\r\n';
+            
+            // Excel attachment part
+            if (excelBase64 && filename) {
+                eml += `--${boundary}\r\n`;
+                eml += 'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n';
+                eml += 'Content-Transfer-Encoding: base64\r\n';
+                eml += `Content-Disposition: attachment; filename="${filename}"\r\n`;
+                eml += '\r\n';
+                
+                // Add base64 content with line breaks every 76 characters (RFC 2045)
+                const lineLength = 76;
+                for (let i = 0; i < excelBase64.length; i += lineLength) {
+                    eml += excelBase64.substring(i, i + lineLength) + '\r\n';
+                }
+                eml += '\r\n';
+            }
+            
+            eml += `--${boundary}--\r\n`;
+            
+            return eml;
+        }
+
+        // Open EML file directly (attempts to open in Outlook)
+        function openEmlFile(emlContent, filename) {
+            const blob = new Blob([emlContent], { type: 'message/rfc822' });
+            const url = URL.createObjectURL(blob);
+            
+            // Try to open the EML file directly - this will trigger the OS file handler
+            // On Windows with Outlook, this should open the email in Outlook
+            const newWindow = window.open(url, '_blank');
+            
+            // If popup was blocked or didn't open, fall back to download
+            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                // Fallback: trigger download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+            
+            // Clean up blob URL after a delay (give time for Outlook to open)
+            setTimeout(() => URL.revokeObjectURL(url), 10000);
+        }
+
+        // Download EML file (for explicit download action)
+        function downloadEml(emlContent, filename) {
+            const blob = new Blob([emlContent], { type: 'message/rfc822' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Open email in Outlook with Excel attachment (using EML file)
         function openInOutlook() {
             const notificationEmail = 'itsm.notification-service@sap.com';
             let toRecipients = '';
@@ -2957,15 +3074,30 @@ ORDER BY ApprovedDate DESC`;
                 ccRecipients = notificationEmail;
             }
 
-            // Construct mailto URL
-            const subject = encodeURIComponent(currentEmailSubject);
-            const body = encodeURIComponent(currentEmailBody);
-            const cc = encodeURIComponent(ccRecipients);
+            // Generate Excel attachment if we have data
+            const excelBase64 = generateExcelBase64();
+            const excelFilename = generateExcelFilename();
             
-            let mailtoUrl = `mailto:${toRecipients}?subject=${subject}&body=${body}&cc=${cc}`;
+            // Generate EML with attachment
+            const emlContent = generateEmlWithAttachment(
+                toRecipients,
+                ccRecipients,
+                currentEmailSubject,
+                currentEmailBody,
+                excelBase64,
+                excelFilename
+            );
             
-            // Open the mailto link
-            window.location.href = mailtoUrl;
+            // Generate EML filename
+            const sanitizedSubject = currentEmailSubject
+                .substring(0, 50)
+                .replace(/[^a-zA-Z0-9 _-]/g, '')
+                .trim()
+                .replace(/\s+/g, '_');
+            const emlFilename = `${sanitizedSubject || 'PAM_Email'}.eml`;
+            
+            // Try to open directly in Outlook
+            openEmlFile(emlContent, emlFilename);
         }
 
         // Show copy success animation for small buttons
