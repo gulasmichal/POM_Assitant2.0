@@ -1110,6 +1110,72 @@
             margin-top: 0.25rem;
         }
 
+        /* Day by Day Summary Section */
+        .day-summary-section {
+            background: rgba(0, 112, 242, 0.04);
+            border: 1px solid rgba(0, 112, 242, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .day-summary-section.enabled {
+            background: rgba(16, 126, 62, 0.04);
+            border-color: rgba(16, 126, 62, 0.3);
+        }
+
+        .day-summary-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .day-summary-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--sapTitleColor);
+        }
+
+        .day-summary-badge {
+            background: var(--sapInformationColor);
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .day-summary-fields {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .day-summary-fields.visible {
+            display: grid;
+        }
+
+        .day-summary-preview {
+            background: #F5F6F7;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            font-family: "Consolas", "Monaco", monospace;
+            font-size: 0.8125rem;
+            color: var(--sapContent_LabelColor);
+            white-space: pre-line;
+        }
+
+        .day-summary-preview-title {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--sapContent_LabelColor);
+            margin-bottom: 0.5rem;
+            font-family: "72", "72full", "72-Web", Helvetica, Arial, sans-serif;
+        }
+
         /* Loading Overlay */
         .loading-overlay {
             position: fixed;
@@ -1405,8 +1471,42 @@
                         </div>
                     </div>
 
+                    <!-- Day by Day Summary Section -->
+                    <div class="day-summary-section" id="daySummarySection">
+                        <div class="day-summary-header">
+                            <div class="editor-checkbox-group">
+                                <input type="checkbox" id="editorDaySummaryEnabled" onchange="toggleDaySummaryFields()">
+                                <label for="editorDaySummaryEnabled" class="day-summary-title">Enable Day by Day Summary</label>
+                            </div>
+                            <span class="day-summary-badge">NEW</span>
+                        </div>
+                        <span class="editor-hint">Groups findings by day and creates a summary you can use in email templates with {{dayByDaySummary}}</span>
+                        
+                        <div class="day-summary-fields" id="daySummaryFields">
+                            <div class="editor-field">
+                                <label class="editor-label">Date Column Name</label>
+                                <input type="text" class="editor-input" id="editorDaySummaryColumn" placeholder="e.g., TimeCreated, ApprovedDate" oninput="updateDaySummaryPreview()">
+                                <span class="editor-hint">Column name from Excel that contains dates</span>
+                            </div>
+                            <div class="editor-field">
+                                <label class="editor-label">Object Description</label>
+                                <input type="text" class="editor-input" id="editorDaySummaryDescription" placeholder="e.g., purchase orders, receipts" oninput="updateDaySummaryPreview()">
+                                <span class="editor-hint">What the objects are called (plural)</span>
+                            </div>
+                            <div class="editor-field" style="grid-column: span 2;">
+                                <div class="day-summary-preview-title">Preview (example with sample data):</div>
+                                <div class="day-summary-preview" id="daySummaryPreview">
+Day by day summary:
+2026-01-15 - 5 purchase orders
+2026-01-14 - 3 purchase orders
+2026-01-13 - 2 purchase orders
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="editor-hint" style="margin-bottom: 1rem;">
-                        <strong>Available variables:</strong> {{customerName}}, {{realm}}, {{firstName}}, {{caseNumber}}, {{itsmRef}}, {{uniqueName}}, {{recordCount}}, {{uniqueNamesList}}
+                        <strong>Available variables:</strong> {{customerName}}, {{realm}}, {{firstName}}, {{caseNumber}}, {{itsmRef}}, {{uniqueName}}, {{recordCount}}, {{uniqueNamesList}}, {{dayByDaySummary}}
                     </div>
                 </div>
             </div>
@@ -1955,6 +2055,16 @@
             let subject = template.subject || '';
             let body = template.body || '';
 
+            // Generate day by day summary if enabled
+            let dayByDaySummary = '';
+            if (typeConfig.daySummary?.enabled && typeConfig.daySummary?.dateColumn && currentMainData.length > 0) {
+                dayByDaySummary = generateDayByDaySummary(
+                    currentMainData,
+                    typeConfig.daySummary.dateColumn,
+                    typeConfig.daySummary.objectDescription
+                );
+            }
+
             // Process all variables
             const vars = {
                 customerName: variables.customerName || '',
@@ -1964,7 +2074,8 @@
                 itsmRef: variables.itsmRef || '',
                 uniqueName: variables.uniqueName || '',
                 recordCount: variables.recordCount || 0,
-                uniqueNamesList: variables.uniqueNamesList || ''
+                uniqueNamesList: variables.uniqueNamesList || '',
+                dayByDaySummary: dayByDaySummary
             };
 
             // Replace placeholders
@@ -1999,6 +2110,9 @@
         function displayResults(monitoringType, infoData, mainData) {
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('resultsContainer').classList.remove('hidden');
+
+            // Store main data for day by day summary generation
+            currentMainData = mainData || [];
 
             const info = extractInfo(infoData);
             const typeConfig = getTypeConfig(monitoringType);
@@ -3096,6 +3210,14 @@ ORDER BY ApprovedDate DESC`;
             document.getElementById('editorEmailPSSingleSubject').value = templates.toPSSingle?.subject || '';
             document.getElementById('editorEmailPSSingleBody').value = templates.toPSSingle?.body || '';
 
+            // Day by Day Summary settings
+            const daySummary = typeConfig.daySummary || {};
+            document.getElementById('editorDaySummaryEnabled').checked = daySummary.enabled || false;
+            document.getElementById('editorDaySummaryColumn').value = daySummary.dateColumn || '';
+            document.getElementById('editorDaySummaryDescription').value = daySummary.objectDescription || '';
+            toggleDaySummaryFields();
+            updateDaySummaryPreview();
+
             // Show editor
             document.getElementById('typeListView').style.display = 'none';
             document.getElementById('typeEditorView').classList.add('active');
@@ -3154,6 +3276,12 @@ ORDER BY ApprovedDate DESC`;
                 statusColor: document.getElementById('editorStatusColor').value,
                 hasQuery: document.getElementById('editorHasQuery').checked,
                 queryTemplate: document.getElementById('editorQueryTemplate').value,
+                // Day by Day Summary settings
+                daySummary: {
+                    enabled: document.getElementById('editorDaySummaryEnabled').checked,
+                    dateColumn: document.getElementById('editorDaySummaryColumn').value.trim(),
+                    objectDescription: document.getElementById('editorDaySummaryDescription').value.trim()
+                },
                 emailTemplates: {
                     toCustomer: {
                         subject: document.getElementById('editorEmailCustomerSubject').value,
@@ -3305,11 +3433,114 @@ ORDER BY ApprovedDate DESC`;
             document.getElementById('editorEmailPSSingleSubject').value = '{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - ';
             document.getElementById('editorEmailPSSingleBody').value = 'Hello {{firstName}},\n\n\n\nPlease notify the customer about the occurrence. If they need additional assistance, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}';
 
+            // Clear Day by Day Summary settings
+            document.getElementById('editorDaySummaryEnabled').checked = false;
+            document.getElementById('editorDaySummaryColumn').value = '';
+            document.getElementById('editorDaySummaryDescription').value = '';
+            toggleDaySummaryFields();
+
             // Show editor
             document.getElementById('typeListView').style.display = 'none';
             document.getElementById('typeEditorView').classList.add('active');
             document.getElementById('saveTypeBtn').style.display = 'inline-flex';
         }
+
+        // ========================================
+        // DAY BY DAY SUMMARY FUNCTIONS
+        // ========================================
+
+        function toggleDaySummaryFields() {
+            const enabled = document.getElementById('editorDaySummaryEnabled').checked;
+            const fieldsContainer = document.getElementById('daySummaryFields');
+            const section = document.getElementById('daySummarySection');
+            
+            if (enabled) {
+                fieldsContainer.classList.add('visible');
+                section.classList.add('enabled');
+            } else {
+                fieldsContainer.classList.remove('visible');
+                section.classList.remove('enabled');
+            }
+        }
+
+        function updateDaySummaryPreview() {
+            const column = document.getElementById('editorDaySummaryColumn').value.trim() || 'TimeCreated';
+            const description = document.getElementById('editorDaySummaryDescription').value.trim() || 'objects';
+            
+            const preview = document.getElementById('daySummaryPreview');
+            const today = new Date();
+            const day1 = today.toISOString().split('T')[0];
+            const day2 = new Date(today - 86400000).toISOString().split('T')[0];
+            const day3 = new Date(today - 172800000).toISOString().split('T')[0];
+            
+            preview.textContent = `Day by day summary:\n${day1} - 5 ${description}\n${day2} - 3 ${description}\n${day3} - 2 ${description}`;
+        }
+
+        // Generate day by day summary from data
+        function generateDayByDaySummary(data, dateColumn, objectDescription) {
+            if (!data || data.length === 0 || !dateColumn) {
+                return '';
+            }
+
+            // Group data by day
+            const dayGroups = {};
+            
+            for (const row of data) {
+                let dateValue = row[dateColumn];
+                if (!dateValue) continue;
+                
+                // Parse the date - handle various formats
+                let dateStr;
+                if (dateValue instanceof Date) {
+                    dateStr = dateValue.toISOString().split('T')[0];
+                } else if (typeof dateValue === 'number') {
+                    // Excel serial date number
+                    const date = new Date((dateValue - 25569) * 86400 * 1000);
+                    dateStr = date.toISOString().split('T')[0];
+                } else {
+                    // Try to parse string date
+                    const parsed = new Date(dateValue);
+                    if (!isNaN(parsed.getTime())) {
+                        dateStr = parsed.toISOString().split('T')[0];
+                    } else {
+                        // Try to extract date from string (e.g., "2026-01-15T10:30:00")
+                        const match = String(dateValue).match(/(\d{4}[-/]\d{2}[-/]\d{2})/);
+                        if (match) {
+                            dateStr = match[1].replace(/\//g, '-');
+                        } else {
+                            continue; // Skip if we can't parse the date
+                        }
+                    }
+                }
+                
+                if (!dayGroups[dateStr]) {
+                    dayGroups[dateStr] = 0;
+                }
+                dayGroups[dateStr]++;
+            }
+
+            // Sort dates descending (newest first)
+            const sortedDates = Object.keys(dayGroups).sort((a, b) => b.localeCompare(a));
+            
+            if (sortedDates.length === 0) {
+                return '';
+            }
+
+            // Build the summary text
+            const description = objectDescription || 'objects';
+            let summary = 'Day by day summary:\n';
+            
+            for (const date of sortedDates) {
+                const count = dayGroups[date];
+                summary += `${date} - ${count} ${description}\n`;
+            }
+
+            return summary.trim();
+        }
+
+        // Store current main data for day by day summary generation
+        let currentMainData = [];
+
     </script>
 </body>
 </html>
