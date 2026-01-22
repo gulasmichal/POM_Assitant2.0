@@ -1176,6 +1176,56 @@
             font-family: "72", "72full", "72-Web", Helvetica, Arial, sans-serif;
         }
 
+        /* Time Interval Selector */
+        .time-interval-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 112, 242, 0.1);
+        }
+
+        .interval-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .interval-option input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--sapBrandColor);
+            cursor: pointer;
+        }
+
+        .interval-option label {
+            font-size: 0.8125rem;
+            color: var(--sapTextColor);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .interval-option input[type="radio"]:checked + label {
+            color: var(--sapBrandColor);
+            font-weight: 600;
+        }
+
+        .time-interval-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--sapContent_LabelColor);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .time-interval-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.25rem;
+        }
+
         /* Loading Overlay */
         .loading-overlay {
             position: fixed;
@@ -1471,22 +1521,50 @@
                         </div>
                     </div>
 
-                    <!-- Day by Day Summary Section -->
+                    <!-- Time-based Summary Section -->
                     <div class="day-summary-section" id="daySummarySection">
                         <div class="day-summary-header">
                             <div class="editor-checkbox-group">
                                 <input type="checkbox" id="editorDaySummaryEnabled" onchange="toggleDaySummaryFields()">
-                                <label for="editorDaySummaryEnabled" class="day-summary-title">Enable Day by Day Summary</label>
+                                <label for="editorDaySummaryEnabled" class="day-summary-title">Enable Time-based Summary</label>
                             </div>
-                            <span class="day-summary-badge">NEW</span>
+                            <span class="day-summary-badge">IMPROVED</span>
                         </div>
-                        <span class="editor-hint">Groups findings by day and creates a summary you can use in email templates with {{dayByDaySummary}}</span>
+                        <span class="editor-hint">Groups findings by time interval and creates a summary you can use in email templates with {{dayByDaySummary}}</span>
                         
                         <div class="day-summary-fields" id="daySummaryFields">
+                            <!-- Time Interval Selector -->
+                            <div class="editor-field" style="grid-column: span 2;">
+                                <div class="time-interval-selector">
+                                    <span class="time-interval-label">Time Interval:</span>
+                                    <div class="time-interval-options">
+                                        <div class="interval-option">
+                                            <input type="radio" id="intervalHourly" name="summaryInterval" value="hourly" onchange="updateDaySummaryPreview()">
+                                            <label for="intervalHourly">Hourly</label>
+                                        </div>
+                                        <div class="interval-option">
+                                            <input type="radio" id="intervalDaily" name="summaryInterval" value="daily" checked onchange="updateDaySummaryPreview()">
+                                            <label for="intervalDaily">Daily</label>
+                                        </div>
+                                        <div class="interval-option">
+                                            <input type="radio" id="intervalWeekly" name="summaryInterval" value="weekly" onchange="updateDaySummaryPreview()">
+                                            <label for="intervalWeekly">Weekly</label>
+                                        </div>
+                                        <div class="interval-option">
+                                            <input type="radio" id="intervalMonthly" name="summaryInterval" value="monthly" onchange="updateDaySummaryPreview()">
+                                            <label for="intervalMonthly">Monthly</label>
+                                        </div>
+                                        <div class="interval-option">
+                                            <input type="radio" id="intervalYearly" name="summaryInterval" value="yearly" onchange="updateDaySummaryPreview()">
+                                            <label for="intervalYearly">Yearly</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="editor-field">
-                                <label class="editor-label">Date Column Name</label>
+                                <label class="editor-label">Date/Time Column Name</label>
                                 <input type="text" class="editor-input" id="editorDaySummaryColumn" placeholder="e.g., TimeCreated, ApprovedDate" oninput="updateDaySummaryPreview()">
-                                <span class="editor-hint">Column name from Excel that contains dates</span>
+                                <span class="editor-hint">Column name from Excel that contains dates/times</span>
                             </div>
                             <div class="editor-field">
                                 <label class="editor-label">Object Description</label>
@@ -1496,7 +1574,7 @@
                             <div class="editor-field" style="grid-column: span 2;">
                                 <div class="day-summary-preview-title">Preview (example with sample data):</div>
                                 <div class="day-summary-preview" id="daySummaryPreview">
-Day by day summary:
+Daily summary:
 2026-01-15 - 5 purchase orders
 2026-01-14 - 3 purchase orders
 2026-01-13 - 2 purchase orders
@@ -2055,13 +2133,14 @@ Day by day summary:
             let subject = template.subject || '';
             let body = template.body || '';
 
-            // Generate day by day summary if enabled
+            // Generate time-based summary if enabled
             let dayByDaySummary = '';
             if (typeConfig.daySummary?.enabled && typeConfig.daySummary?.dateColumn && currentMainData.length > 0) {
                 dayByDaySummary = generateDayByDaySummary(
                     currentMainData,
                     typeConfig.daySummary.dateColumn,
-                    typeConfig.daySummary.objectDescription
+                    typeConfig.daySummary.objectDescription,
+                    typeConfig.daySummary.interval || 'daily'
                 );
             }
 
@@ -3210,11 +3289,12 @@ ORDER BY ApprovedDate DESC`;
             document.getElementById('editorEmailPSSingleSubject').value = templates.toPSSingle?.subject || '';
             document.getElementById('editorEmailPSSingleBody').value = templates.toPSSingle?.body || '';
 
-            // Day by Day Summary settings
+            // Time-based Summary settings
             const daySummary = typeConfig.daySummary || {};
             document.getElementById('editorDaySummaryEnabled').checked = daySummary.enabled || false;
             document.getElementById('editorDaySummaryColumn').value = daySummary.dateColumn || '';
             document.getElementById('editorDaySummaryDescription').value = daySummary.objectDescription || '';
+            setSelectedInterval(daySummary.interval || 'daily');
             toggleDaySummaryFields();
             updateDaySummaryPreview();
 
@@ -3276,9 +3356,10 @@ ORDER BY ApprovedDate DESC`;
                 statusColor: document.getElementById('editorStatusColor').value,
                 hasQuery: document.getElementById('editorHasQuery').checked,
                 queryTemplate: document.getElementById('editorQueryTemplate').value,
-                // Day by Day Summary settings
+                // Time-based Summary settings
                 daySummary: {
                     enabled: document.getElementById('editorDaySummaryEnabled').checked,
+                    interval: getSelectedInterval(),
                     dateColumn: document.getElementById('editorDaySummaryColumn').value.trim(),
                     objectDescription: document.getElementById('editorDaySummaryDescription').value.trim()
                 },
@@ -3433,11 +3514,13 @@ ORDER BY ApprovedDate DESC`;
             document.getElementById('editorEmailPSSingleSubject').value = '{{caseNumber}} PSEE Proactive Monitoring - customer {{customerName}}, realm {{realm}} - ';
             document.getElementById('editorEmailPSSingleBody').value = 'Hello {{firstName}},\n\n\n\nPlease notify the customer about the occurrence. If they need additional assistance, they are welcome to submit a support case with SAP Ariba.\n\n{{itsmRef}}';
 
-            // Clear Day by Day Summary settings
+            // Clear Time-based Summary settings
             document.getElementById('editorDaySummaryEnabled').checked = false;
             document.getElementById('editorDaySummaryColumn').value = '';
             document.getElementById('editorDaySummaryDescription').value = '';
+            setSelectedInterval('daily');
             toggleDaySummaryFields();
+            updateDaySummaryPreview();
 
             // Show editor
             document.getElementById('typeListView').style.display = 'none';
@@ -3463,76 +3546,191 @@ ORDER BY ApprovedDate DESC`;
             }
         }
 
-        function updateDaySummaryPreview() {
-            const column = document.getElementById('editorDaySummaryColumn').value.trim() || 'TimeCreated';
-            const description = document.getElementById('editorDaySummaryDescription').value.trim() || 'objects';
-            
-            const preview = document.getElementById('daySummaryPreview');
-            const today = new Date();
-            const day1 = today.toISOString().split('T')[0];
-            const day2 = new Date(today - 86400000).toISOString().split('T')[0];
-            const day3 = new Date(today - 172800000).toISOString().split('T')[0];
-            
-            preview.textContent = `Day by day summary:\n${day1} - 5 ${description}\n${day2} - 3 ${description}\n${day3} - 2 ${description}`;
+        function getSelectedInterval() {
+            const radios = document.getElementsByName('summaryInterval');
+            for (const radio of radios) {
+                if (radio.checked) {
+                    return radio.value;
+                }
+            }
+            return 'daily';
         }
 
-        // Generate day by day summary from data
-        function generateDayByDaySummary(data, dateColumn, objectDescription) {
+        function setSelectedInterval(interval) {
+            const radio = document.getElementById('interval' + interval.charAt(0).toUpperCase() + interval.slice(1));
+            if (radio) {
+                radio.checked = true;
+            }
+        }
+
+        function getIntervalLabel(interval) {
+            const labels = {
+                'hourly': 'Hourly',
+                'daily': 'Daily',
+                'weekly': 'Weekly',
+                'monthly': 'Monthly',
+                'yearly': 'Yearly'
+            };
+            return labels[interval] || 'Daily';
+        }
+
+        function updateDaySummaryPreview() {
+            const description = document.getElementById('editorDaySummaryDescription').value.trim() || 'objects';
+            const interval = getSelectedInterval();
+            const preview = document.getElementById('daySummaryPreview');
+            const today = new Date();
+            
+            let previewText = '';
+            const intervalLabel = getIntervalLabel(interval);
+            
+            switch (interval) {
+                case 'hourly':
+                    const hour1 = today.toISOString().slice(0, 13) + ':00';
+                    const hour2 = new Date(today - 3600000).toISOString().slice(0, 13) + ':00';
+                    const hour3 = new Date(today - 7200000).toISOString().slice(0, 13) + ':00';
+                    previewText = `${intervalLabel} summary:\n${hour1} - 5 ${description}\n${hour2} - 3 ${description}\n${hour3} - 2 ${description}`;
+                    break;
+                    
+                case 'daily':
+                    const day1 = today.toISOString().split('T')[0];
+                    const day2 = new Date(today - 86400000).toISOString().split('T')[0];
+                    const day3 = new Date(today - 172800000).toISOString().split('T')[0];
+                    previewText = `${intervalLabel} summary:\n${day1} - 5 ${description}\n${day2} - 3 ${description}\n${day3} - 2 ${description}`;
+                    break;
+                    
+                case 'weekly':
+                    // Get ISO week number
+                    const getWeekKey = (date) => {
+                        const d = new Date(date);
+                        d.setHours(0, 0, 0, 0);
+                        d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+                        const yearStart = new Date(d.getFullYear(), 0, 1);
+                        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+                        return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+                    };
+                    const week1 = getWeekKey(today);
+                    const week2 = getWeekKey(new Date(today - 7 * 86400000));
+                    const week3 = getWeekKey(new Date(today - 14 * 86400000));
+                    previewText = `${intervalLabel} summary:\n${week1} - 5 ${description}\n${week2} - 3 ${description}\n${week3} - 2 ${description}`;
+                    break;
+                    
+                case 'monthly':
+                    const month1 = today.toISOString().slice(0, 7);
+                    const prevMonth1 = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const prevMonth2 = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+                    const month2 = prevMonth1.toISOString().slice(0, 7);
+                    const month3 = prevMonth2.toISOString().slice(0, 7);
+                    previewText = `${intervalLabel} summary:\n${month1} - 5 ${description}\n${month2} - 3 ${description}\n${month3} - 2 ${description}`;
+                    break;
+                    
+                case 'yearly':
+                    const year1 = today.getFullYear();
+                    const year2 = year1 - 1;
+                    const year3 = year1 - 2;
+                    previewText = `${intervalLabel} summary:\n${year1} - 5 ${description}\n${year2} - 3 ${description}\n${year3} - 2 ${description}`;
+                    break;
+                    
+                default:
+                    previewText = `${intervalLabel} summary:\nNo data`;
+            }
+            
+            preview.textContent = previewText;
+        }
+
+        // Helper function to parse date from various formats
+        function parseDateValue(dateValue) {
+            if (!dateValue) return null;
+            
+            if (dateValue instanceof Date) {
+                return dateValue;
+            } else if (typeof dateValue === 'number') {
+                // Excel serial date number
+                return new Date((dateValue - 25569) * 86400 * 1000);
+            } else {
+                // Try to parse string date
+                const parsed = new Date(dateValue);
+                if (!isNaN(parsed.getTime())) {
+                    return parsed;
+                } else {
+                    // Try to extract date from string (e.g., "2026-01-15T10:30:00")
+                    const match = String(dateValue).match(/(\d{4}[-/]\d{2}[-/]\d{2})(?:[T\s](\d{2}:\d{2}))?/);
+                    if (match) {
+                        const dateStr = match[1].replace(/\//g, '-');
+                        const timeStr = match[2] || '00:00';
+                        return new Date(`${dateStr}T${timeStr}:00`);
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Get the grouping key based on interval
+        function getIntervalKey(date, interval) {
+            switch (interval) {
+                case 'hourly':
+                    return date.toISOString().slice(0, 13) + ':00';
+                    
+                case 'daily':
+                    return date.toISOString().split('T')[0];
+                    
+                case 'weekly':
+                    // Get ISO week number
+                    const d = new Date(date);
+                    d.setHours(0, 0, 0, 0);
+                    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+                    const yearStart = new Date(d.getFullYear(), 0, 1);
+                    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+                    return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+                    
+                case 'monthly':
+                    return date.toISOString().slice(0, 7);
+                    
+                case 'yearly':
+                    return String(date.getFullYear());
+                    
+                default:
+                    return date.toISOString().split('T')[0];
+            }
+        }
+
+        // Generate time-based summary from data (supports multiple intervals)
+        function generateDayByDaySummary(data, dateColumn, objectDescription, interval = 'daily') {
             if (!data || data.length === 0 || !dateColumn) {
                 return '';
             }
 
-            // Group data by day
-            const dayGroups = {};
+            // Group data by the selected interval
+            const groups = {};
             
             for (const row of data) {
-                let dateValue = row[dateColumn];
-                if (!dateValue) continue;
+                const dateValue = row[dateColumn];
+                const parsedDate = parseDateValue(dateValue);
                 
-                // Parse the date - handle various formats
-                let dateStr;
-                if (dateValue instanceof Date) {
-                    dateStr = dateValue.toISOString().split('T')[0];
-                } else if (typeof dateValue === 'number') {
-                    // Excel serial date number
-                    const date = new Date((dateValue - 25569) * 86400 * 1000);
-                    dateStr = date.toISOString().split('T')[0];
-                } else {
-                    // Try to parse string date
-                    const parsed = new Date(dateValue);
-                    if (!isNaN(parsed.getTime())) {
-                        dateStr = parsed.toISOString().split('T')[0];
-                    } else {
-                        // Try to extract date from string (e.g., "2026-01-15T10:30:00")
-                        const match = String(dateValue).match(/(\d{4}[-/]\d{2}[-/]\d{2})/);
-                        if (match) {
-                            dateStr = match[1].replace(/\//g, '-');
-                        } else {
-                            continue; // Skip if we can't parse the date
-                        }
-                    }
-                }
+                if (!parsedDate) continue;
                 
-                if (!dayGroups[dateStr]) {
-                    dayGroups[dateStr] = 0;
+                const key = getIntervalKey(parsedDate, interval);
+                
+                if (!groups[key]) {
+                    groups[key] = 0;
                 }
-                dayGroups[dateStr]++;
+                groups[key]++;
             }
 
-            // Sort dates descending (newest first)
-            const sortedDates = Object.keys(dayGroups).sort((a, b) => b.localeCompare(a));
+            // Sort keys descending (newest first)
+            const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
             
-            if (sortedDates.length === 0) {
+            if (sortedKeys.length === 0) {
                 return '';
             }
 
             // Build the summary text
             const description = objectDescription || 'objects';
-            let summary = 'Day by day summary:\n';
+            const intervalLabel = getIntervalLabel(interval);
+            let summary = `${intervalLabel} summary:\n`;
             
-            for (const date of sortedDates) {
-                const count = dayGroups[date];
-                summary += `${date} - ${count} ${description}\n`;
+            for (const key of sortedKeys) {
+                const count = groups[key];
+                summary += `${key} - ${count} ${description}\n`;
             }
 
             return summary.trim();
