@@ -1483,7 +1483,7 @@
                         <div class="editor-field">
                             <label class="editor-label">Query</label>
                             <textarea class="editor-input editor-textarea" id="editorQueryTemplate" placeholder="SELECT ... FROM ... WHERE UniqueName IN ({{uniqueNamesList}})"></textarea>
-                            <span class="editor-hint">Use {{uniqueNamesList}} for the list of IDs</span>
+                            <span class="editor-hint">Use {{uniqueNamesList}} for list of IDs, {{batchQuery}} for time-based conditions</span>
                         </div>
                     </div>
 
@@ -2145,10 +2145,12 @@ Daily summary:
         }
 
         // Generate query from template
-        function generateQueryFromTemplate(template, uniqueNames) {
+        function generateQueryFromTemplate(template, uniqueNames, batchQuery = '') {
             if (!template) return '';
             const namesList = uniqueNames.map(n => `'${n}'`).join(', ');
-            return template.replace(/\{\{uniqueNamesList\}\}/g, namesList);
+            return template
+                .replace(/\{\{uniqueNamesList\}\}/g, namesList)
+                .replace(/\{\{batchQuery\}\}/g, batchQuery);
         }
 
         // Generate email from config templates
@@ -2363,7 +2365,20 @@ Daily summary:
             
             if (typeConfig?.hasQuery && typeConfig?.queryTemplate) {
                 querySection.classList.remove('hidden');
-                currentQuery = generateQueryFromTemplate(typeConfig.queryTemplate, uniqueNames);
+                
+                // Generate batchQuery if time-based summary is enabled
+                let batchQueryForTemplate = '';
+                if (typeConfig.daySummary?.enabled && typeConfig.daySummary?.dateColumn && typeConfig.daySummary?.summaryQuery && mainData.length > 0) {
+                    batchQueryForTemplate = generateBatchQuery(
+                        mainData,
+                        typeConfig.daySummary.dateColumn,
+                        typeConfig.daySummary.summaryQuery,
+                        typeConfig.daySummary.interval || 'daily',
+                        typeConfig.daySummary.batchGap || 10
+                    );
+                }
+                
+                currentQuery = generateQueryFromTemplate(typeConfig.queryTemplate, uniqueNames, batchQueryForTemplate);
                 queryCode.textContent = currentQuery;
             } else {
                 querySection.classList.add('hidden');
