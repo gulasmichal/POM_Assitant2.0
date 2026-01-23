@@ -3817,7 +3817,7 @@ ORDER BY ApprovedDate DESC`;
                             .replace(/\{\{gap\}\}/g, currentBatchGap);
                         return `(${condition})`;
                     });
-                    queryPreview.textContent = queryParts.join('\nOR\n');
+                    queryPreview.textContent = queryParts.join(' OR ');
                 }
             }
         }
@@ -4029,7 +4029,7 @@ ORDER BY ApprovedDate DESC`;
                 return `(${condition})`;
             });
 
-            return queryParts.join('\nOR\n');
+            return queryParts.join(' OR ');
         }
 
         // Get batch intervals from data based on time gaps
