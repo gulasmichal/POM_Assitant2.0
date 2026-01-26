@@ -1226,6 +1226,29 @@
             gap: 0.75rem 1.25rem;
         }
 
+        /* Batch Gap Field */
+        .batch-gap-field {
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, rgba(0, 112, 242, 0.03), rgba(0, 112, 242, 0.06));
+            border-radius: 6px;
+            border: 1px solid rgba(0, 112, 242, 0.1);
+        }
+
+        .batch-gap-field .editor-input {
+            max-width: 150px;
+        }
+
+        /* Query Preview */
+        .query-preview {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.75rem;
+            background: linear-gradient(135deg, rgba(107, 73, 132, 0.05), rgba(107, 73, 132, 0.1));
+            border-color: rgba(107, 73, 132, 0.2);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
         /* Loading Overlay */
         .loading-overlay {
             position: fixed;
@@ -1460,7 +1483,7 @@
                         <div class="editor-field">
                             <label class="editor-label">Query</label>
                             <textarea class="editor-input editor-textarea" id="editorQueryTemplate" placeholder="SELECT ... FROM ... WHERE UniqueName IN ({{uniqueNamesList}})"></textarea>
-                            <span class="editor-hint">Use {{uniqueNamesList}} for the list of IDs</span>
+                            <span class="editor-hint">Use {{uniqueNamesList}} for list of IDs, {{batchQuery}} for time-based conditions</span>
                         </div>
                     </div>
 
@@ -1558,8 +1581,18 @@
                                             <input type="radio" id="intervalYearly" name="summaryInterval" value="yearly" onchange="updateDaySummaryPreview()">
                                             <label for="intervalYearly">Yearly</label>
                                         </div>
+                                        <div class="interval-option">
+                                            <input type="radio" id="intervalBatch" name="summaryInterval" value="batch" onchange="updateDaySummaryPreview()">
+                                            <label for="intervalBatch">Batch (by gap)</label>
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
+                            <!-- Batch Gap Input (shown only when batch is selected) -->
+                            <div class="editor-field batch-gap-field" id="batchGapField" style="display: none;">
+                                <label class="editor-label">Batch Gap (minutes)</label>
+                                <input type="number" class="editor-input" id="editorBatchGap" placeholder="e.g., 10, 30, 60" min="1" step="1" value="10" oninput="updateDaySummaryPreview()">
+                                <span class="editor-hint">Records within this time gap are grouped together. Use {{gap}} in Summary Query.</span>
                             </div>
                             <div class="editor-field">
                                 <label class="editor-label">Date/Time Column Name</label>
@@ -1567,12 +1600,12 @@
                                 <span class="editor-hint">Column name from Excel that contains dates/times</span>
                             </div>
                             <div class="editor-field">
-                                <label class="editor-label">Object Description</label>
+                                <label class="editor-label">Summary Text (for emails)</label>
                                 <input type="text" class="editor-input" id="editorDaySummaryDescription" placeholder="e.g., purchase orders, receipts" oninput="updateDaySummaryPreview()">
-                                <span class="editor-hint">What the objects are called (plural)</span>
+                                <span class="editor-hint">Text used in {{dayByDaySummary}} variable (plural form)</span>
                             </div>
                             <div class="editor-field" style="grid-column: span 2;">
-                                <div class="day-summary-preview-title">Preview (example with sample data):</div>
+                                <div class="day-summary-preview-title">Text Preview (example):</div>
                                 <div class="day-summary-preview" id="daySummaryPreview">
 Daily summary:
 2026-01-15 - 5 purchase orders
@@ -1580,11 +1613,23 @@ Daily summary:
 2026-01-13 - 2 purchase orders
                                 </div>
                             </div>
+                            <!-- Summary Query Section -->
+                            <div class="editor-field" style="grid-column: span 2; margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px dashed rgba(0, 112, 242, 0.2);">
+                                <label class="editor-label">Summary Query (optional AQL condition)</label>
+                                <input type="text" class="editor-input" id="editorSummaryQuery" placeholder="e.g., Date('{{AQLdateStart}}')-StartRunDate>=-(15+{{gap}}+1)/24/60 AND Date('{{AQLdateEnd}}')-EndRunDate<=(15+{{gap}})/24/60" oninput="updateDaySummaryPreview()">
+                                <span class="editor-hint">Placeholders: {{AQLdateStart}}, {{AQLdateEnd}}, {{gap}} (batch gap in minutes). Repeated for each interval, joined with OR. Result: {{batchQuery}}</span>
+                            </div>
+                            <div class="editor-field" style="grid-column: span 2;">
+                                <div class="day-summary-preview-title">Query Preview:</div>
+                                <div class="day-summary-preview query-preview" id="daySummaryQueryPreview">
+(No query template defined)
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="editor-hint" style="margin-bottom: 1rem;">
-                        <strong>Available variables:</strong> {{customerName}}, {{realm}}, {{firstName}}, {{caseNumber}}, {{itsmRef}}, {{uniqueName}}, {{recordCount}}, {{uniqueNamesList}}, {{dayByDaySummary}}
+                        <strong>Available variables:</strong> {{customerName}}, {{realm}}, {{firstName}}, {{caseNumber}}, {{itsmRef}}, {{uniqueName}}, {{recordCount}}, {{uniqueNamesList}}, {{dayByDaySummary}}, {{batchQuery}}
                     </div>
                 </div>
             </div>
@@ -2100,10 +2145,12 @@ Daily summary:
         }
 
         // Generate query from template
-        function generateQueryFromTemplate(template, uniqueNames) {
+        function generateQueryFromTemplate(template, uniqueNames, batchQuery = '') {
             if (!template) return '';
             const namesList = uniqueNames.map(n => `'${n}'`).join(', ');
-            return template.replace(/\{\{uniqueNamesList\}\}/g, namesList);
+            return template
+                .replace(/\{\{uniqueNamesList\}\}/g, namesList)
+                .replace(/\{\{batchQuery\}\}/g, batchQuery);
         }
 
         // Generate email from config templates
@@ -2135,13 +2182,26 @@ Daily summary:
 
             // Generate time-based summary if enabled
             let dayByDaySummary = '';
+            let batchQuery = '';
             if (typeConfig.daySummary?.enabled && typeConfig.daySummary?.dateColumn && currentMainData.length > 0) {
                 dayByDaySummary = generateDayByDaySummary(
                     currentMainData,
                     typeConfig.daySummary.dateColumn,
                     typeConfig.daySummary.objectDescription,
-                    typeConfig.daySummary.interval || 'daily'
+                    typeConfig.daySummary.interval || 'daily',
+                    typeConfig.daySummary.batchGap || 1
                 );
+                
+                // Generate batch query if template is provided
+                if (typeConfig.daySummary.summaryQuery) {
+                    batchQuery = generateBatchQuery(
+                        currentMainData,
+                        typeConfig.daySummary.dateColumn,
+                        typeConfig.daySummary.summaryQuery,
+                        typeConfig.daySummary.interval || 'daily',
+                        typeConfig.daySummary.batchGap || 1
+                    );
+                }
             }
 
             // Process all variables
@@ -2154,7 +2214,8 @@ Daily summary:
                 uniqueName: variables.uniqueName || '',
                 recordCount: variables.recordCount || 0,
                 uniqueNamesList: variables.uniqueNamesList || '',
-                dayByDaySummary: dayByDaySummary
+                dayByDaySummary: dayByDaySummary,
+                batchQuery: batchQuery
             };
 
             // Replace placeholders
@@ -2304,7 +2365,20 @@ Daily summary:
             
             if (typeConfig?.hasQuery && typeConfig?.queryTemplate) {
                 querySection.classList.remove('hidden');
-                currentQuery = generateQueryFromTemplate(typeConfig.queryTemplate, uniqueNames);
+                
+                // Generate batchQuery if time-based summary is enabled
+                let batchQueryForTemplate = '';
+                if (typeConfig.daySummary?.enabled && typeConfig.daySummary?.dateColumn && typeConfig.daySummary?.summaryQuery && mainData.length > 0) {
+                    batchQueryForTemplate = generateBatchQuery(
+                        mainData,
+                        typeConfig.daySummary.dateColumn,
+                        typeConfig.daySummary.summaryQuery,
+                        typeConfig.daySummary.interval || 'daily',
+                        typeConfig.daySummary.batchGap || 10
+                    );
+                }
+                
+                currentQuery = generateQueryFromTemplate(typeConfig.queryTemplate, uniqueNames, batchQueryForTemplate);
                 queryCode.textContent = currentQuery;
             } else {
                 querySection.classList.add('hidden');
@@ -3294,6 +3368,8 @@ ORDER BY ApprovedDate DESC`;
             document.getElementById('editorDaySummaryEnabled').checked = daySummary.enabled || false;
             document.getElementById('editorDaySummaryColumn').value = daySummary.dateColumn || '';
             document.getElementById('editorDaySummaryDescription').value = daySummary.objectDescription || '';
+            document.getElementById('editorBatchGap').value = daySummary.batchGap || 1;
+            document.getElementById('editorSummaryQuery').value = daySummary.summaryQuery || '';
             setSelectedInterval(daySummary.interval || 'daily');
             toggleDaySummaryFields();
             updateDaySummaryPreview();
@@ -3360,8 +3436,10 @@ ORDER BY ApprovedDate DESC`;
                 daySummary: {
                     enabled: document.getElementById('editorDaySummaryEnabled').checked,
                     interval: getSelectedInterval(),
+                    batchGap: parseFloat(document.getElementById('editorBatchGap').value) || 1,
                     dateColumn: document.getElementById('editorDaySummaryColumn').value.trim(),
-                    objectDescription: document.getElementById('editorDaySummaryDescription').value.trim()
+                    objectDescription: document.getElementById('editorDaySummaryDescription').value.trim(),
+                    summaryQuery: document.getElementById('editorSummaryQuery').value.trim()
                 },
                 emailTemplates: {
                     toCustomer: {
@@ -3518,6 +3596,8 @@ ORDER BY ApprovedDate DESC`;
             document.getElementById('editorDaySummaryEnabled').checked = false;
             document.getElementById('editorDaySummaryColumn').value = '';
             document.getElementById('editorDaySummaryDescription').value = '';
+            document.getElementById('editorBatchGap').value = 1;
+            document.getElementById('editorSummaryQuery').value = '';
             setSelectedInterval('daily');
             toggleDaySummaryFields();
             updateDaySummaryPreview();
@@ -3569,7 +3649,8 @@ ORDER BY ApprovedDate DESC`;
                 'daily': 'Daily',
                 'weekly': 'Weekly',
                 'monthly': 'Monthly',
-                'yearly': 'Yearly'
+                'yearly': 'Yearly',
+                'batch': 'Batch'
             };
             return labels[interval] || 'Daily';
         }
@@ -3578,10 +3659,25 @@ ORDER BY ApprovedDate DESC`;
             const description = document.getElementById('editorDaySummaryDescription').value.trim() || 'objects';
             const interval = getSelectedInterval();
             const preview = document.getElementById('daySummaryPreview');
+            const queryPreview = document.getElementById('daySummaryQueryPreview');
+            const summaryQuery = document.getElementById('editorSummaryQuery')?.value.trim() || '';
             const today = new Date();
+            const batchGapField = document.getElementById('batchGapField');
+            
+            // Show/hide batch gap field based on selected interval
+            if (batchGapField) {
+                batchGapField.style.display = (interval === 'batch') ? 'block' : 'none';
+            }
             
             let previewText = '';
+            let sampleIntervals = []; // For query preview
             const intervalLabel = getIntervalLabel(interval);
+            
+            // Format date for AQL: Date('YYYY-MM-DD HH:MM:SS PST') - using UTC to match Excel data
+            const formatAQLDate = (d) => {
+                const pad = (n) => String(n).padStart(2, '0');
+                return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} PST`;
+            };
             
             switch (interval) {
                 case 'hourly':
@@ -3589,6 +3685,15 @@ ORDER BY ApprovedDate DESC`;
                     const hour2 = new Date(today - 3600000).toISOString().slice(0, 13) + ':00';
                     const hour3 = new Date(today - 7200000).toISOString().slice(0, 13) + ':00';
                     previewText = `${intervalLabel} summary:\n${hour1} - 5 ${description}\n${hour2} - 3 ${description}\n${hour3} - 2 ${description}`;
+                    // For hourly, start and end are the same hour
+                    const h1 = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), 0, 0);
+                    const h2 = new Date(h1 - 3600000);
+                    const h3 = new Date(h1 - 7200000);
+                    sampleIntervals = [
+                        { start: h1, end: new Date(h1.getTime() + 3599999) },
+                        { start: h2, end: new Date(h2.getTime() + 3599999) },
+                        { start: h3, end: new Date(h3.getTime() + 3599999) }
+                    ];
                     break;
                     
                 case 'daily':
@@ -3596,6 +3701,14 @@ ORDER BY ApprovedDate DESC`;
                     const day2 = new Date(today - 86400000).toISOString().split('T')[0];
                     const day3 = new Date(today - 172800000).toISOString().split('T')[0];
                     previewText = `${intervalLabel} summary:\n${day1} - 5 ${description}\n${day2} - 3 ${description}\n${day3} - 2 ${description}`;
+                    const d1 = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+                    const d2 = new Date(d1 - 86400000);
+                    const d3 = new Date(d1 - 172800000);
+                    sampleIntervals = [
+                        { start: d1, end: new Date(d1.getTime() + 86399999) },
+                        { start: d2, end: new Date(d2.getTime() + 86399999) },
+                        { start: d3, end: new Date(d3.getTime() + 86399999) }
+                    ];
                     break;
                     
                 case 'weekly':
@@ -3612,6 +3725,22 @@ ORDER BY ApprovedDate DESC`;
                     const week2 = getWeekKey(new Date(today - 7 * 86400000));
                     const week3 = getWeekKey(new Date(today - 14 * 86400000));
                     previewText = `${intervalLabel} summary:\n${week1} - 5 ${description}\n${week2} - 3 ${description}\n${week3} - 2 ${description}`;
+                    // Week starts Monday
+                    const getWeekStart = (date) => {
+                        const d = new Date(date);
+                        const day = d.getDay();
+                        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                        return new Date(d.setDate(diff));
+                    };
+                    const w1Start = getWeekStart(today);
+                    w1Start.setHours(0, 0, 0, 0);
+                    const w2Start = new Date(w1Start - 7 * 86400000);
+                    const w3Start = new Date(w1Start - 14 * 86400000);
+                    sampleIntervals = [
+                        { start: w1Start, end: new Date(w1Start.getTime() + 7 * 86400000 - 1) },
+                        { start: w2Start, end: new Date(w2Start.getTime() + 7 * 86400000 - 1) },
+                        { start: w3Start, end: new Date(w3Start.getTime() + 7 * 86400000 - 1) }
+                    ];
                     break;
                     
                 case 'monthly':
@@ -3621,6 +3750,17 @@ ORDER BY ApprovedDate DESC`;
                     const month2 = prevMonth1.toISOString().slice(0, 7);
                     const month3 = prevMonth2.toISOString().slice(0, 7);
                     previewText = `${intervalLabel} summary:\n${month1} - 5 ${description}\n${month2} - 3 ${description}\n${month3} - 2 ${description}`;
+                    const m1Start = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0);
+                    const m1End = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+                    const m2Start = new Date(today.getFullYear(), today.getMonth() - 1, 1, 0, 0, 0);
+                    const m2End = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+                    const m3Start = new Date(today.getFullYear(), today.getMonth() - 2, 1, 0, 0, 0);
+                    const m3End = new Date(today.getFullYear(), today.getMonth() - 1, 0, 23, 59, 59);
+                    sampleIntervals = [
+                        { start: m1Start, end: m1End },
+                        { start: m2Start, end: m2End },
+                        { start: m3Start, end: m3End }
+                    ];
                     break;
                     
                 case 'yearly':
@@ -3628,6 +3768,32 @@ ORDER BY ApprovedDate DESC`;
                     const year2 = year1 - 1;
                     const year3 = year1 - 2;
                     previewText = `${intervalLabel} summary:\n${year1} - 5 ${description}\n${year2} - 3 ${description}\n${year3} - 2 ${description}`;
+                    sampleIntervals = [
+                        { start: new Date(year1, 0, 1, 0, 0, 0), end: new Date(year1, 11, 31, 23, 59, 59) },
+                        { start: new Date(year2, 0, 1, 0, 0, 0), end: new Date(year2, 11, 31, 23, 59, 59) },
+                        { start: new Date(year3, 0, 1, 0, 0, 0), end: new Date(year3, 11, 31, 23, 59, 59) }
+                    ];
+                    break;
+                    
+                case 'batch':
+                    const batchGap = parseFloat(document.getElementById('editorBatchGap')?.value) || 10;
+                    // Format date-time ranges for batch preview
+                    const formatDateTime = (d) => d.toISOString().slice(0, 16).replace('T', ' ');
+                    const batch1Start = new Date(today - 2 * 3600000);
+                    const batch1End = today;
+                    const batch2Start = new Date(today - 8 * 3600000);
+                    const batch2End = new Date(today - 6 * 3600000);
+                    const batch3Start = new Date(today - 26 * 3600000);
+                    const batch3End = new Date(today - 24 * 3600000);
+                    previewText = `${intervalLabel} summary (gap: ${batchGap}min):\n`;
+                    previewText += `${formatDateTime(batch1Start)} - ${formatDateTime(batch1End)} (5 ${description})\n`;
+                    previewText += `${formatDateTime(batch2Start)} - ${formatDateTime(batch2End)} (3 ${description})\n`;
+                    previewText += `${formatDateTime(batch3Start)} - ${formatDateTime(batch3End)} (2 ${description})`;
+                    sampleIntervals = [
+                        { start: batch1Start, end: batch1End },
+                        { start: batch2Start, end: batch2End },
+                        { start: batch3Start, end: batch3End }
+                    ];
                     break;
                     
                 default:
@@ -3635,6 +3801,25 @@ ORDER BY ApprovedDate DESC`;
             }
             
             preview.textContent = previewText;
+            
+            // Generate query preview
+            if (queryPreview) {
+                if (!summaryQuery) {
+                    queryPreview.textContent = '(No query template defined)';
+                } else if (sampleIntervals.length === 0) {
+                    queryPreview.textContent = '(No intervals to generate query)';
+                } else {
+                    const currentBatchGap = parseFloat(document.getElementById('editorBatchGap')?.value) || 10;
+                    const queryParts = sampleIntervals.map(interval => {
+                        let condition = summaryQuery
+                            .replace(/\{\{AQLdateStart\}\}/g, formatAQLDate(interval.start))
+                            .replace(/\{\{AQLdateEnd\}\}/g, formatAQLDate(interval.end))
+                            .replace(/\{\{gap\}\}/g, currentBatchGap);
+                        return `(${condition})`;
+                    });
+                    queryPreview.textContent = queryParts.join(' OR ');
+                }
+            }
         }
 
         // Helper function to parse date from various formats
@@ -3693,10 +3878,18 @@ ORDER BY ApprovedDate DESC`;
             }
         }
 
-        // Generate time-based summary from data (supports multiple intervals)
-        function generateDayByDaySummary(data, dateColumn, objectDescription, interval = 'daily') {
+        // Generate time-based summary from data (supports multiple intervals including batch)
+        function generateDayByDaySummary(data, dateColumn, objectDescription, interval = 'daily', batchGapMinutes = 10) {
             if (!data || data.length === 0 || !dateColumn) {
                 return '';
+            }
+
+            const description = objectDescription || 'objects';
+            const intervalLabel = getIntervalLabel(interval);
+            
+            // Special handling for batch mode
+            if (interval === 'batch') {
+                return generateBatchSummary(data, dateColumn, description, batchGapMinutes);
             }
 
             // Group data by the selected interval
@@ -3724,8 +3917,6 @@ ORDER BY ApprovedDate DESC`;
             }
 
             // Build the summary text
-            const description = objectDescription || 'objects';
-            const intervalLabel = getIntervalLabel(interval);
             let summary = `${intervalLabel} summary:\n`;
             
             for (const key of sortedKeys) {
@@ -3734,6 +3925,218 @@ ORDER BY ApprovedDate DESC`;
             }
 
             return summary.trim();
+        }
+
+        // Generate batch-based summary by grouping records with time gaps
+        function generateBatchSummary(data, dateColumn, description, batchGapMinutes) {
+            // Parse all dates and filter out invalid ones
+            const records = [];
+            for (const row of data) {
+                const dateValue = row[dateColumn];
+                const parsedDate = parseDateValue(dateValue);
+                if (parsedDate) {
+                    records.push({ date: parsedDate, row: row });
+                }
+            }
+            
+            if (records.length === 0) {
+                return '';
+            }
+            
+            // Sort records by date (oldest first for batch processing)
+            records.sort((a, b) => a.date.getTime() - b.date.getTime());
+            
+            // Convert batch gap from minutes to milliseconds
+            const batchGapMs = batchGapMinutes * 60 * 1000;
+            
+            // Group into batches
+            const batches = [];
+            let currentBatch = {
+                start: records[0].date,
+                end: records[0].date,
+                count: 1
+            };
+            
+            for (let i = 1; i < records.length; i++) {
+                const currentDate = records[i].date;
+                const previousDate = records[i - 1].date;
+                
+                // If current date is within batchGap of the previous date, extend the batch
+                if (currentDate.getTime() <= previousDate.getTime() + batchGapMs) {
+                    currentBatch.end = currentDate;
+                    currentBatch.count++;
+                } else {
+                    // Start a new batch
+                    batches.push(currentBatch);
+                    currentBatch = {
+                        start: currentDate,
+                        end: currentDate,
+                        count: 1
+                    };
+                }
+            }
+            // Don't forget the last batch
+            batches.push(currentBatch);
+            
+            // Sort batches by start date descending (newest first)
+            batches.sort((a, b) => b.start.getTime() - a.start.getTime());
+            
+            // Format the output (using UTC to match Excel data)
+            const formatDateTime = (d) => d.toISOString().slice(0, 16).replace('T', ' ');
+            
+            let summary = `Batch summary (gap: ${batchGapMinutes}min):\n`;
+            
+            for (const batch of batches) {
+                // Always show both start and end for nice alignment
+                summary += `${formatDateTime(batch.start)} - ${formatDateTime(batch.end)} (${batch.count} ${description})\n`;
+            }
+            
+            return summary.trim();
+        }
+
+        // Generate AQL query from time intervals
+        function generateBatchQuery(data, dateColumn, queryTemplate, interval = 'daily', batchGapMinutes = 10) {
+            if (!data || data.length === 0 || !dateColumn || !queryTemplate) {
+                return '';
+            }
+
+            // Format date for AQL: Date('YYYY-MM-DD HH:MM:SS PST') - using UTC to match Excel data
+            const formatAQLDate = (d) => {
+                const pad = (n) => String(n).padStart(2, '0');
+                return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} PST`;
+            };
+
+            let intervals = [];
+
+            if (interval === 'batch') {
+                // Use batch logic - group by time gaps
+                intervals = getBatchIntervals(data, dateColumn, batchGapMinutes);
+            } else {
+                // Use fixed interval grouping (hourly, daily, weekly, monthly, yearly)
+                intervals = getFixedIntervals(data, dateColumn, interval);
+            }
+
+            if (intervals.length === 0) {
+                return '';
+            }
+
+            // Generate query parts
+            const queryParts = intervals.map(int => {
+                let condition = queryTemplate
+                    .replace(/\{\{AQLdateStart\}\}/g, formatAQLDate(int.start))
+                    .replace(/\{\{AQLdateEnd\}\}/g, formatAQLDate(int.end))
+                    .replace(/\{\{gap\}\}/g, batchGapMinutes);
+                return `(${condition})`;
+            });
+
+            return queryParts.join(' OR ');
+        }
+
+        // Get batch intervals from data based on time gaps
+        function getBatchIntervals(data, dateColumn, batchGapMinutes) {
+            const records = [];
+            for (const row of data) {
+                const dateValue = row[dateColumn];
+                const parsedDate = parseDateValue(dateValue);
+                if (parsedDate) {
+                    records.push(parsedDate);
+                }
+            }
+            
+            if (records.length === 0) return [];
+            
+            records.sort((a, b) => a.getTime() - b.getTime());
+            
+            const batchGapMs = batchGapMinutes * 60 * 1000;
+            const batches = [];
+            let currentBatch = { start: records[0], end: records[0] };
+            
+            for (let i = 1; i < records.length; i++) {
+                const currentDate = records[i];
+                const previousDate = records[i - 1];
+                
+                if (currentDate.getTime() <= previousDate.getTime() + batchGapMs) {
+                    currentBatch.end = currentDate;
+                } else {
+                    batches.push(currentBatch);
+                    currentBatch = { start: currentDate, end: currentDate };
+                }
+            }
+            batches.push(currentBatch);
+            
+            // Sort newest first
+            batches.sort((a, b) => b.start.getTime() - a.start.getTime());
+            
+            return batches;
+        }
+
+        // Get fixed intervals from data (hourly, daily, weekly, monthly, yearly)
+        function getFixedIntervals(data, dateColumn, interval) {
+            const records = [];
+            for (const row of data) {
+                const dateValue = row[dateColumn];
+                const parsedDate = parseDateValue(dateValue);
+                if (parsedDate) {
+                    records.push(parsedDate);
+                }
+            }
+            
+            if (records.length === 0) return [];
+            
+            // Group by interval key and track min/max dates per group
+            const groups = {};
+            
+            for (const date of records) {
+                const key = getIntervalKey(date, interval);
+                if (!groups[key]) {
+                    groups[key] = { min: date, max: date };
+                } else {
+                    if (date < groups[key].min) groups[key].min = date;
+                    if (date > groups[key].max) groups[key].max = date;
+                }
+            }
+            
+            // Convert to intervals with proper start/end times based on interval type
+            const intervals = [];
+            for (const key of Object.keys(groups)) {
+                let start, end;
+                const sampleDate = groups[key].min;
+                
+                switch (interval) {
+                    case 'hourly':
+                        start = new Date(sampleDate.getFullYear(), sampleDate.getMonth(), sampleDate.getDate(), sampleDate.getHours(), 0, 0);
+                        end = new Date(start.getTime() + 3600000 - 1);
+                        break;
+                    case 'daily':
+                        start = new Date(sampleDate.getFullYear(), sampleDate.getMonth(), sampleDate.getDate(), 0, 0, 0);
+                        end = new Date(start.getTime() + 86400000 - 1);
+                        break;
+                    case 'weekly':
+                        const day = sampleDate.getDay();
+                        const diff = sampleDate.getDate() - day + (day === 0 ? -6 : 1);
+                        start = new Date(sampleDate.getFullYear(), sampleDate.getMonth(), diff, 0, 0, 0);
+                        end = new Date(start.getTime() + 7 * 86400000 - 1);
+                        break;
+                    case 'monthly':
+                        start = new Date(sampleDate.getFullYear(), sampleDate.getMonth(), 1, 0, 0, 0);
+                        end = new Date(sampleDate.getFullYear(), sampleDate.getMonth() + 1, 0, 23, 59, 59);
+                        break;
+                    case 'yearly':
+                        start = new Date(sampleDate.getFullYear(), 0, 1, 0, 0, 0);
+                        end = new Date(sampleDate.getFullYear(), 11, 31, 23, 59, 59);
+                        break;
+                    default:
+                        start = groups[key].min;
+                        end = groups[key].max;
+                }
+                
+                intervals.push({ start, end, key });
+            }
+            
+            // Sort newest first
+            intervals.sort((a, b) => b.start.getTime() - a.start.getTime());
+            
+            return intervals;
         }
 
         // Store current main data for day by day summary generation
